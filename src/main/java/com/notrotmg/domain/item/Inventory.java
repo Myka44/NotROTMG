@@ -40,6 +40,10 @@ public final class Inventory {
         return slotAt(index).take();
     }
 
+    public Optional<Item> itemInSlot(int index) {
+        return slotAt(index).item();
+    }
+
     public Optional<Equipment> equipFromSlot(int index) {
         ItemSlot itemSlot = slotAt(index);
         Item item = itemSlot.item()

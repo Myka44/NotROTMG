@@ -12,8 +12,8 @@ public final class WarriorItemFactory implements CharacterItemFactory {
     }
 
     @Override
-    public Spell createSpell() {
-        return new Spell("Battle Cry", 10, 8);
+    public Equipment createAbility() {
+        return new Armor("Iron Helmet", ItemType.HELMET, EquipmentSlot.ABILITY, 6);
     }
 
     @Override

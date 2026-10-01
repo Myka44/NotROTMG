@@ -12,7 +12,7 @@ public final class WizardItemFactory implements CharacterItemFactory {
     }
 
     @Override
-    public Spell createSpell() {
+    public Equipment createAbility() {
         return new Spell("Fireball", 24, 20);
     }
 
