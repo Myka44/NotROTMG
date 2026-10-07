@@ -1,9 +1,17 @@
 package com.notrotmg.domain.item;
 
+import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.SingleShotStrategy;
+
 public final class ArcherItemFactory implements CharacterItemFactory {
     @Override
     public Weapon createWeapon() {
-        return new Weapon("Longbow", ItemType.BOW, 15);
+        return new Weapon(
+                "Longbow",
+                ItemType.BOW,
+                new ProjectileDefinition("arrow-projectile", 15, 520, 6, 1.2),
+                new SingleShotStrategy()
+        );
     }
 
     @Override

@@ -1,9 +1,17 @@
 package com.notrotmg.domain.item;
 
+import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.SingleShotStrategy;
+
 public final class WarriorItemFactory implements CharacterItemFactory {
     @Override
     public Weapon createWeapon() {
-        return new Weapon("Iron Sword", ItemType.SWORD, 18);
+        return new Weapon(
+                "Iron Sword",
+                ItemType.SWORD,
+                new ProjectileDefinition("iron-sword-projectile", 18, 420, 8, 0.8),
+                new SingleShotStrategy()
+        );
     }
 
     @Override
