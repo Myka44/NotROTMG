@@ -6,7 +6,7 @@ import com.notrotmg.domain.Position;
 
 import java.util.Objects;
 
-public abstract class Enemy extends Entity {
+public abstract class Enemy extends Entity implements EnemyPrototype {
     private final String name;
     private final EnemyType type;
 
@@ -33,4 +33,7 @@ public abstract class Enemy extends Entity {
     public final EnemyType type() {
         return type;
     }
+
+    @Override
+    public abstract Enemy copy(String id, Position position);
 }

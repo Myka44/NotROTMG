@@ -7,7 +7,14 @@ import java.util.Set;
 
 public enum CharacterClass {
     WARRIOR(
-            new EntityStats(150, 40, 20, 12, 180, 5),
+            EntityStats.builder()
+                    .maxHealth(150)
+                    .maxMana(40)
+                    .damage(20)
+                    .defense(12)
+                    .speed(180)
+                    .spellStrength(5)
+                    .build(),
             Set.of(
                     ItemType.SWORD,
                     ItemType.HEAVY_ARMOR,
@@ -17,7 +24,14 @@ public enum CharacterClass {
             )
     ),
     WIZARD(
-            new EntityStats(90, 150, 8, 5, 180, 24),
+            EntityStats.builder()
+                    .maxHealth(90)
+                    .maxMana(150)
+                    .damage(8)
+                    .defense(5)
+                    .speed(180)
+                    .spellStrength(24)
+                    .build(),
             Set.of(
                     ItemType.STAFF,
                     ItemType.ROBE,
@@ -26,7 +40,14 @@ public enum CharacterClass {
             )
     ),
     ARCHER(
-            new EntityStats(110, 70, 17, 8, 200, 8),
+            EntityStats.builder()
+                    .maxHealth(110)
+                    .maxMana(70)
+                    .damage(17)
+                    .defense(8)
+                    .speed(200)
+                    .spellStrength(8)
+                    .build(),
             Set.of(
                     ItemType.BOW,
                     ItemType.LEATHER_ARMOR,
