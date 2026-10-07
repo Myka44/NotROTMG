@@ -10,6 +10,7 @@ module com.notrotmg.game {
     exports com.notrotmg.domain;
     exports com.notrotmg.domain.enemy;
     exports com.notrotmg.domain.item;
+    exports com.notrotmg.domain.projectile;
     exports com.notrotmg.protocol;
     exports com.notrotmg.protocol.clienttoserver;
     exports com.notrotmg.protocol.servertoclient;

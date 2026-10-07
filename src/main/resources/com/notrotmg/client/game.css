@@ -1,0 +1,79 @@
+.game-root {
+    -fx-background-color: #171615;
+}
+
+.game-frame {
+    -fx-background-color: #514a43;
+}
+
+.instructions-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #ddd3c0;
+}
+
+.status-label {
+    -fx-text-fill: #bdb4a5;
+}
+
+.inventory-pane {
+    -fx-padding: 12;
+    -fx-background-color: #211f1d;
+    -fx-border-color: #514a43;
+    -fx-border-width: 0 0 0 3;
+}
+
+.inventory-slot {
+    -fx-background-color: #332f2b;
+    -fx-border-color: #6b6258;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-text-fill: #eee4cf;
+    -fx-cursor: hand;
+}
+
+.selected-inventory-slot {
+    -fx-background-color: #574c32;
+    -fx-border-color: #f2c14e;
+    -fx-border-width: 3;
+}
+
+.inventory-slot:disabled {
+    -fx-opacity: 0.6;
+}
+
+.slot-label {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #bfb5a3;
+}
+
+.item-name {
+    -fx-font-size: 9px;
+    -fx-text-fill: #f3ead7;
+}
+
+.empty-item-name {
+    -fx-text-fill: #81786d;
+}
+
+.empty-item-icon {
+    -fx-background-color: #171615;
+    -fx-border-color: #403c37;
+    -fx-border-width: 1;
+    -fx-border-insets: 7;
+}
+
+.inventory-action-button {
+    -fx-pref-width: 86;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-radius: 2;
+}
+
+.equip-button {
+    -fx-background-color: #3f704d;
+}
+
+.drop-button {
+    -fx-background-color: #8a3e38;
+}
