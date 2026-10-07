@@ -1,4 +1,6 @@
-package com.notrotmg.protocol;
+package com.notrotmg.protocol.servertoclient;
+
+import com.notrotmg.domain.CharacterClass;
 
 /** Immutable network representation of one player. */
 public record PlayerSnapshot(
@@ -9,6 +11,6 @@ public record PlayerSnapshot(
         int level,
         int currentHealth,
         int maxHealth,
-        String characterClass
+        CharacterClass characterClass
 ) {
 }

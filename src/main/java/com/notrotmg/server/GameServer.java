@@ -3,8 +3,9 @@ package com.notrotmg.server;
 import com.notrotmg.common.json.JacksonJsonCodec;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.protocol.GameProtocol;
-import com.notrotmg.protocol.GameSnapshot;
-import com.notrotmg.protocol.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.ClientCommand;
+import com.notrotmg.protocol.servertoclient.GameSnapshot;
+import com.notrotmg.protocol.servertoclient.ServerMessage;
 import io.javalin.Javalin;
 import io.javalin.websocket.WsCloseContext;
 import io.javalin.websocket.WsContext;
@@ -20,6 +21,7 @@ public final class GameServer implements AutoCloseable {
     private final int port;
     private final JacksonJsonCodec jsonCodec;
     private final AuthoritativeGameWorld world;
+    private final GameCommandHandler commandHandler;
     private final ClientRegistry clients;
     private final GameLoop gameLoop;
     private volatile GameSnapshot lastPublishedSnapshot;
@@ -51,6 +53,7 @@ public final class GameServer implements AutoCloseable {
         this.port = port;
         this.jsonCodec = Objects.requireNonNull(jsonCodec);
         this.world = Objects.requireNonNull(world);
+        this.commandHandler = new GameCommandHandler(world);
         this.clients = Objects.requireNonNull(clients);
         this.gameLoop = Objects.requireNonNull(gameLoop);
         this.lastPublishedSnapshot = world.snapshot();
@@ -91,6 +94,7 @@ public final class GameServer implements AutoCloseable {
         clients.register(connection).ifPresentOrElse(registration -> {
             world.addPlayer(registration.playerId());
             publishCurrentSnapshot(true);
+            sendInventorySnapshot(connection, registration.playerId());
             System.out.println(
                     registration.playerId() + " connected ("
                             + registration.connectedClients() + "/" + GameProtocol.MAX_PLAYERS + ")"
@@ -101,8 +105,11 @@ public final class GameServer implements AutoCloseable {
     private void onMessage(WsMessageContext connection) {
         clients.playerId(connection).ifPresent(playerId -> {
             try {
-                PlayerInput input = jsonCodec.decode(connection.message(), PlayerInput.class);
-                world.acceptInput(playerId, input);
+                ClientCommand command = jsonCodec.decode(connection.message(), ClientCommand.class);
+                boolean inventoryChanged = commandHandler.handle(playerId, command);
+                if (inventoryChanged) {
+                    sendInventorySnapshot(connection, playerId);
+                }
             } catch (RuntimeException exception) {
                 System.err.println("Rejected client message: " + exception.getMessage());
             }
@@ -151,6 +158,19 @@ public final class GameServer implements AutoCloseable {
             }
         }
         lastPublishedSnapshot = snapshot;
+    }
+
+    private void sendInventorySnapshot(WsContext connection, String playerId) {
+        world.inventorySnapshot(playerId)
+                .ifPresent(snapshot -> sendMessage(connection, snapshot));
+    }
+
+    private void sendMessage(WsContext connection, ServerMessage message) {
+        try {
+            connection.send(jsonCodec.encode(message));
+        } catch (RuntimeException exception) {
+            System.err.println("Could not send server message: " + exception.getMessage());
+        }
     }
 
     @Override

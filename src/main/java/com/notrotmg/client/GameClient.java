@@ -1,8 +1,8 @@
 package com.notrotmg.client;
 
 import com.notrotmg.common.json.JacksonJsonCodec;
-import com.notrotmg.protocol.GameSnapshot;
-import com.notrotmg.protocol.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.ClientCommand;
+import com.notrotmg.protocol.servertoclient.ServerMessage;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public final class GameClient implements AutoCloseable {
     private final URI serverUri;
     private final JacksonJsonCodec jsonCodec;
-    private final Consumer<GameSnapshot> snapshotHandler;
+    private final Consumer<ServerMessage> messageHandler;
     private final Consumer<String> statusHandler;
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private CompletableFuture<WebSocket> connection;
@@ -26,12 +26,12 @@ public final class GameClient implements AutoCloseable {
     public GameClient(
             URI serverUri,
             JacksonJsonCodec jsonCodec,
-            Consumer<GameSnapshot> snapshotHandler,
+            Consumer<ServerMessage> messageHandler,
             Consumer<String> statusHandler
     ) {
         this.serverUri = Objects.requireNonNull(serverUri);
         this.jsonCodec = Objects.requireNonNull(jsonCodec);
-        this.snapshotHandler = Objects.requireNonNull(snapshotHandler);
+        this.messageHandler = Objects.requireNonNull(messageHandler);
         this.statusHandler = Objects.requireNonNull(statusHandler);
     }
 
@@ -45,13 +45,15 @@ public final class GameClient implements AutoCloseable {
         });
     }
 
-    //async input siuntimas, reikes pakeist, kad keli tipai galetu but siunciami
-    public synchronized void send(PlayerInput input) {
-        if (webSocket == null) {
+    public synchronized void send(ClientCommand command) {
+        WebSocket socket = webSocket;
+        if (socket == null) {
             return;
         }
-        String json = jsonCodec.encode(input);
-        sendTail = sendTail.thenCompose(ignored -> webSocket.sendText(json, true));
+        String json = jsonCodec.encode(command);
+        sendTail = sendTail
+                .exceptionally(error -> null)
+                .thenCompose(ignored -> socket.sendText(json, true));
     }
 
     @Override
@@ -90,7 +92,8 @@ public final class GameClient implements AutoCloseable {
                 String json = partialMessage.toString();
                 partialMessage.setLength(0);
                 try {
-                    snapshotHandler.accept(jsonCodec.decode(json, GameSnapshot.class));
+                    ServerMessage message = jsonCodec.decode(json, ServerMessage.class);
+                    messageHandler.accept(message);
                 } catch (RuntimeException error) {
                     statusHandler.accept("Invalid server message: " + messageOf(error));
                 }

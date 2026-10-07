@@ -6,7 +6,7 @@ public interface CharacterItemFactory {
 
     Armor createArmor();
 
-    Spell createSpell();
+    Equipment createAbility();
 
     Armor createRing();
 }

@@ -1,6 +1,6 @@
 package com.notrotmg.client;
 
-import com.notrotmg.protocol.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
