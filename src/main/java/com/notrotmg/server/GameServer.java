@@ -1,6 +1,7 @@
 package com.notrotmg.server;
 
 import com.notrotmg.common.json.JacksonJsonCodec;
+import com.notrotmg.common.logging.GameLogger;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.protocol.GameProtocol;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
@@ -84,7 +85,7 @@ public final class GameServer implements AutoCloseable {
         application.start();
         gameLoop.start(this::tick);
 
-        System.out.println(
+        GameLogger.getInstance().log(
                 "Game server listening on ws://" + host + ":" + application.port()
                         + GameProtocol.WEBSOCKET_PATH
         );
@@ -95,7 +96,7 @@ public final class GameServer implements AutoCloseable {
             world.addPlayer(registration.playerId());
             publishCurrentSnapshot(true);
             sendInventorySnapshot(connection, registration.playerId());
-            System.out.println(
+            GameLogger.getInstance().log(
                     registration.playerId() + " connected ("
                             + registration.connectedClients() + "/" + GameProtocol.MAX_PLAYERS + ")"
             );
@@ -129,7 +130,7 @@ public final class GameServer implements AutoCloseable {
         clients.unregister(connection).ifPresent(playerId -> {
             world.removePlayer(playerId);
             publishCurrentSnapshot(true);
-            System.out.println(
+            GameLogger.getInstance().log(
                     playerId + " disconnected (" + clients.size() + "/" + GameProtocol.MAX_PLAYERS + ")"
             );
         });

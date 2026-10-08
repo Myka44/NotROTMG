@@ -7,6 +7,7 @@ module com.notrotmg.game {
 
     exports com.notrotmg.client;
     exports com.notrotmg.common.json;
+    exports com.notrotmg.common.logging;
     exports com.notrotmg.domain;
     exports com.notrotmg.domain.enemy;
     exports com.notrotmg.domain.item;
