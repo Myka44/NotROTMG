@@ -8,6 +8,7 @@ import com.notrotmg.protocol.clienttoserver.DropItemCommand;
 import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
+import com.notrotmg.protocol.servertoclient.ServerMessage;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -21,9 +22,10 @@ import javafx.stage.Stage;
 import java.util.List;
 import java.util.Objects;
 
-public final class GameClientApplication extends Application {
+public final class GameClientApplication extends Application implements GameClientListener {
     private final Canvas canvas = new Canvas(GameRules.CANVAS_WIDTH, GameRules.CANVAS_HEIGHT);
     private final Label statusLabel = new Label("Disconnected");
+    private ClientMessageHandler messageHandler;
     private GameClient gameClient;
 
     @Override
@@ -41,7 +43,7 @@ public final class GameClientApplication extends Application {
                 this::dropItem,
                 this::unequipItem
         );
-        ClientMessageHandler messageHandler = new ClientMessageHandler(renderer, inventoryPane);
+        messageHandler = new ClientMessageHandler(renderer, inventoryPane);
         StackPane gameFrame = new StackPane(canvas);
         gameFrame.setPadding(new Insets(3));
         gameFrame.getStyleClass().add("game-frame");
@@ -61,12 +63,8 @@ public final class GameClientApplication extends Application {
                 getClass().getResource("game.css"),
                 "Missing client stylesheet: game.css"
         ).toExternalForm());
-        gameClient = new GameClient(
-                GameProtocol.LOCAL_SERVER_URI,
-                new JacksonJsonCodec(),
-                message -> Platform.runLater(() -> messageHandler.handle(message)),
-                status -> Platform.runLater(() -> statusLabel.setText(status))
-        );
+        gameClient = new GameClient(GameProtocol.LOCAL_SERVER_URI, new JacksonJsonCodec());
+        gameClient.addListener(this);
         new InputController(gameClient).attach(scene, stage);
 
         stage.setTitle("NotROTMG local client");
@@ -81,8 +79,29 @@ public final class GameClientApplication extends Application {
     @Override
     public void stop() {
         if (gameClient != null) {
+            gameClient.removeListener(this);
             gameClient.close();
         }
+    }
+
+    @Override
+    public void onConnected() {
+        Platform.runLater(() -> statusLabel.setText("Connected"));
+    }
+
+    @Override
+    public void onMessage(ServerMessage message) {
+        Platform.runLater(() -> messageHandler.handle(message));
+    }
+
+    @Override
+    public void onDisconnected(int statusCode, String reason) {
+        Platform.runLater(() -> statusLabel.setText("Disconnected (" + statusCode + ")"));
+    }
+
+    @Override
+    public void onError(String message) {
+        Platform.runLater(() -> statusLabel.setText(message));
     }
 
     private void equipItem(int inventorySlot) {

@@ -7,32 +7,33 @@ import com.notrotmg.protocol.servertoclient.ServerMessage;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Minimal WebSocket client used by the JavaFX application. */
 public final class GameClient implements AutoCloseable {
     private final URI serverUri;
     private final JacksonJsonCodec jsonCodec;
-    private final Consumer<ServerMessage> messageHandler;
-    private final Consumer<String> statusHandler;
+    private final List<GameClientListener> listeners = new CopyOnWriteArrayList<>();
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private CompletableFuture<WebSocket> connection;
     private CompletableFuture<?> sendTail = CompletableFuture.completedFuture(null);
     private volatile WebSocket webSocket;
 
-    public GameClient(
-            URI serverUri,
-            JacksonJsonCodec jsonCodec,
-            Consumer<ServerMessage> messageHandler,
-            Consumer<String> statusHandler
-    ) {
+    public GameClient(URI serverUri, JacksonJsonCodec jsonCodec) {
         this.serverUri = Objects.requireNonNull(serverUri);
         this.jsonCodec = Objects.requireNonNull(jsonCodec);
-        this.messageHandler = Objects.requireNonNull(messageHandler);
-        this.statusHandler = Objects.requireNonNull(statusHandler);
+    }
+
+    public void addListener(GameClientListener listener) {
+        listeners.add(Objects.requireNonNull(listener));
+    }
+
+    public void removeListener(GameClientListener listener) {
+        listeners.remove(listener);
     }
 
     public void connect() {
@@ -40,7 +41,7 @@ public final class GameClient implements AutoCloseable {
                 .buildAsync(serverUri, new SocketListener());
         connection.whenComplete((socket, error) -> {
             if (error != null) {
-                statusHandler.accept("Connection error: " + messageOf(error));
+                notifyError("Connection error: " + messageOf(error));
             }
         });
     }
@@ -67,6 +68,30 @@ public final class GameClient implements AutoCloseable {
         }
     }
 
+    private void notifyConnected() {
+        for (GameClientListener listener : listeners) {
+            listener.onConnected();
+        }
+    }
+
+    private void notifyMessage(ServerMessage message) {
+        for (GameClientListener listener : listeners) {
+            listener.onMessage(message);
+        }
+    }
+
+    private void notifyDisconnected(int statusCode, String reason) {
+        for (GameClientListener listener : listeners) {
+            listener.onDisconnected(statusCode, reason);
+        }
+    }
+
+    private void notifyError(String message) {
+        for (GameClientListener listener : listeners) {
+            listener.onError(message);
+        }
+    }
+
     private static String messageOf(Throwable error) {
         Throwable cause = error;
         while (cause.getCause() != null) {
@@ -81,7 +106,7 @@ public final class GameClient implements AutoCloseable {
         @Override
         public void onOpen(WebSocket socket) {
             webSocket = socket;
-            statusHandler.accept("Connected");
+            notifyConnected();
             socket.request(1);
         }
 
@@ -92,10 +117,9 @@ public final class GameClient implements AutoCloseable {
                 String json = partialMessage.toString();
                 partialMessage.setLength(0);
                 try {
-                    ServerMessage message = jsonCodec.decode(json, ServerMessage.class);
-                    messageHandler.accept(message);
+                    notifyMessage(jsonCodec.decode(json, ServerMessage.class));
                 } catch (RuntimeException error) {
-                    statusHandler.accept("Invalid server message: " + messageOf(error));
+                    notifyError("Invalid server message: " + messageOf(error));
                 }
             }
             socket.request(1);
@@ -105,14 +129,14 @@ public final class GameClient implements AutoCloseable {
         @Override
         public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
             webSocket = null;
-            statusHandler.accept("Disconnected (" + statusCode + ")");
+            notifyDisconnected(statusCode, reason);
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
         public void onError(WebSocket socket, Throwable error) {
             webSocket = null;
-            statusHandler.accept("Connection error: " + messageOf(error));
+            notifyError("Connection error: " + messageOf(error));
         }
     }
 }

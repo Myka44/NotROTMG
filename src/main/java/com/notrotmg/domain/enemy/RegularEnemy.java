@@ -3,8 +3,12 @@ package com.notrotmg.domain.enemy;
 import com.notrotmg.domain.EntityStats;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.projectile.AttackStrategy;
-import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.KineticProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SingleShotStrategy;
+
+import java.util.function.Supplier;
 
 public final class RegularEnemy extends Enemy {
     private static final double SIZE = 28;
@@ -16,9 +20,11 @@ public final class RegularEnemy extends Enemy {
             .speed(120)
             .spellStrength(0)
             .build();
-    private static final ProjectileDefinition PROJECTILE =
-            new ProjectileDefinition("slime-projectile", 8, 260, 10, 1.6);
+    private static final ProjectileSpec PROJECTILE =
+            new ProjectileSpec("slime-projectile", 8, 260, 10, 1.6);
     private static final AttackStrategy ATTACK_STRATEGY = new SingleShotStrategy();
+    private static final Supplier<ProjectileBuilder> PROJECTILE_BUILDER =
+            () -> new KineticProjectileBuilder(4);
 
     public RegularEnemy(String id, Position position) {
         super(
@@ -29,7 +35,8 @@ public final class RegularEnemy extends Enemy {
                 SIZE,
                 STATS,
                 PROJECTILE,
-                ATTACK_STRATEGY
+                ATTACK_STRATEGY,
+                PROJECTILE_BUILDER
         );
     }
 
@@ -39,8 +46,9 @@ public final class RegularEnemy extends Enemy {
             String name,
             double size,
             EntityStats stats,
-            ProjectileDefinition projectileDefinition,
-            AttackStrategy attackStrategy
+            ProjectileSpec projectileSpec,
+            AttackStrategy attackStrategy,
+            Supplier<ProjectileBuilder> projectileBuilderFactory
     ) {
         super(
                 id,
@@ -49,8 +57,9 @@ public final class RegularEnemy extends Enemy {
                 position,
                 size,
                 stats,
-                projectileDefinition,
-                attackStrategy
+                projectileSpec,
+                attackStrategy,
+                projectileBuilderFactory
         );
     }
 
@@ -62,8 +71,9 @@ public final class RegularEnemy extends Enemy {
                 name(),
                 size(),
                 stats(),
-                projectileDefinition(),
-                attackStrategy()
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory()
         );
     }
 }
