@@ -1,6 +1,7 @@
 package com.notrotmg.domain.item;
 
-import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.KineticProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SingleShotStrategy;
 
 public final class WarriorItemFactory implements CharacterItemFactory {
@@ -9,8 +10,9 @@ public final class WarriorItemFactory implements CharacterItemFactory {
         return new Weapon(
                 "Iron Sword",
                 ItemType.SWORD,
-                new ProjectileDefinition("iron-sword-projectile", 18, 420, 8, 0.8),
-                new SingleShotStrategy()
+                new ProjectileSpec("iron-sword-projectile", 18, 420, 8, 0.8),
+                new SingleShotStrategy(),
+                () -> new KineticProjectileBuilder(3)
         );
     }
 

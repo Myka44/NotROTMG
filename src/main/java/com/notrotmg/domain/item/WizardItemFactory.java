@@ -1,6 +1,7 @@
 package com.notrotmg.domain.item;
 
-import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.MagicProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SpreadShotStrategy;
 
 public final class WizardItemFactory implements CharacterItemFactory {
@@ -9,8 +10,9 @@ public final class WizardItemFactory implements CharacterItemFactory {
         return new Weapon(
                 "Apprentice Staff",
                 ItemType.STAFF,
-                new ProjectileDefinition("magic-bolt-projectile", 8, 380, 8, 1.4),
-                new SpreadShotStrategy(3, 10)
+                new ProjectileSpec("magic-bolt-projectile", 8, 380, 8, 1.4),
+                new SpreadShotStrategy(3, 10),
+                () -> new MagicProjectileBuilder("arcane")
         );
     }
 

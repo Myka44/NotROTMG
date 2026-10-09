@@ -3,8 +3,12 @@ package com.notrotmg.domain.enemy;
 import com.notrotmg.domain.EntityStats;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.projectile.AttackStrategy;
-import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.MagicProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.RadialShotStrategy;
+
+import java.util.function.Supplier;
 
 public final class BossEnemy extends Enemy {
     private static final double SIZE = 64;
@@ -16,9 +20,11 @@ public final class BossEnemy extends Enemy {
             .speed(90)
             .spellStrength(20)
             .build();
-    private static final ProjectileDefinition PROJECTILE =
-            new ProjectileDefinition("guardian-projectile", 35, 300, 14, 2);
+    private static final ProjectileSpec PROJECTILE =
+            new ProjectileSpec("guardian-projectile", 35, 300, 14, 2);
     private static final AttackStrategy ATTACK_STRATEGY = new RadialShotStrategy(8);
+    private static final Supplier<ProjectileBuilder> PROJECTILE_BUILDER =
+            () -> new MagicProjectileBuilder("arcane");
 
     public BossEnemy(String id, Position position) {
         super(
@@ -29,7 +35,8 @@ public final class BossEnemy extends Enemy {
                 SIZE,
                 STATS,
                 PROJECTILE,
-                ATTACK_STRATEGY
+                ATTACK_STRATEGY,
+                PROJECTILE_BUILDER
         );
     }
 
@@ -39,8 +46,9 @@ public final class BossEnemy extends Enemy {
             String name,
             double size,
             EntityStats stats,
-            ProjectileDefinition projectileDefinition,
-            AttackStrategy attackStrategy
+            ProjectileSpec projectileSpec,
+            AttackStrategy attackStrategy,
+            Supplier<ProjectileBuilder> projectileBuilderFactory
     ) {
         super(
                 id,
@@ -49,8 +57,9 @@ public final class BossEnemy extends Enemy {
                 position,
                 size,
                 stats,
-                projectileDefinition,
-                attackStrategy
+                projectileSpec,
+                attackStrategy,
+                projectileBuilderFactory
         );
     }
 
@@ -62,8 +71,9 @@ public final class BossEnemy extends Enemy {
                 name(),
                 size(),
                 stats(),
-                projectileDefinition(),
-                attackStrategy()
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory()
         );
     }
 }

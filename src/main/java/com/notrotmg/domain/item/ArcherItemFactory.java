@@ -1,6 +1,7 @@
 package com.notrotmg.domain.item;
 
-import com.notrotmg.domain.projectile.ProjectileDefinition;
+import com.notrotmg.domain.projectile.KineticProjectileBuilder;
+import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SingleShotStrategy;
 
 public final class ArcherItemFactory implements CharacterItemFactory {
@@ -9,8 +10,9 @@ public final class ArcherItemFactory implements CharacterItemFactory {
         return new Weapon(
                 "Longbow",
                 ItemType.BOW,
-                new ProjectileDefinition("arrow-projectile", 15, 520, 6, 1.2),
-                new SingleShotStrategy()
+                new ProjectileSpec("arrow-projectile", 15, 520, 6, 1.2),
+                new SingleShotStrategy(),
+                () -> new KineticProjectileBuilder(2)
         );
     }
 

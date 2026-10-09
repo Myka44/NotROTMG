@@ -2,6 +2,7 @@ package com.notrotmg.domain.projectile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /** Fires several projectiles with an even angular gap centred on the aim direction. */
 public final class SpreadShotStrategy implements AttackStrategy {
@@ -20,15 +21,20 @@ public final class SpreadShotStrategy implements AttackStrategy {
     }
 
     @Override
-    public List<ActiveProjectile> attack(AttackContext context, ProjectileDefinition definition) {
-        List<ActiveProjectile> projectiles = new ArrayList<>(projectileCount);
+    public List<Projectile> attack(
+            AttackContext context,
+            ProjectileSpec spec,
+            Supplier<ProjectileBuilder> builderFactory
+    ) {
+        List<Projectile> projectiles = new ArrayList<>(projectileCount);
         double centreIndex = (projectileCount - 1) / 2.0;
 
         for (int index = 0; index < projectileCount; index++) {
             double offsetRadians = Math.toRadians((index - centreIndex) * angleStepDegrees);
-            projectiles.add(ActiveProjectile.launch(
+            projectiles.add(AttackStrategy.launch(
                     context,
-                    definition,
+                    spec,
+                    builderFactory.get(),
                     context.aimDirection().rotated(offsetRadians)
             ));
         }
