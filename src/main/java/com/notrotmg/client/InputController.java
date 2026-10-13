@@ -1,8 +1,12 @@
 package com.notrotmg.client;
 
+import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 
 import java.util.EnumSet;
@@ -13,13 +17,20 @@ import java.util.Set;
 public final class InputController {
     private final GameClient gameClient;
     private final Set<KeyCode> pressedMovementKeys = EnumSet.noneOf(KeyCode.class);
+    private double attackTargetX;
+    private double attackTargetY;
+    private boolean firing;
 
     public InputController(GameClient gameClient) {
         this.gameClient = Objects.requireNonNull(gameClient);
     }
 
     //stage pats window, o scene content
-    public void attach(Scene scene, Stage stage) {
+    public void attach(Scene scene, Stage stage, Canvas canvas) {
+        Objects.requireNonNull(scene);
+        Objects.requireNonNull(stage);
+        Objects.requireNonNull(canvas);
+
         scene.setOnKeyPressed(event -> {
             if (isMovementKey(event.getCode()) && pressedMovementKeys.add(event.getCode())) {
                 publishInput();
@@ -32,11 +43,38 @@ public final class InputController {
                 event.consume();
             }
         });
+
+        canvas.setOnMousePressed(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                updateAttackTarget(event);
+                firing = true;
+                publishAttackInput();
+                event.consume();
+            }
+        });
+        canvas.setOnMouseDragged(event -> {
+            if (firing) {
+                updateAttackTarget(event);
+                publishAttackInput();
+                event.consume();
+            }
+        });
+        scene.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY && firing) {
+                firing = false;
+                publishAttackInput();
+            }
+        });
+
         //adds a listener for whenever the stage gains or loses focus
         stage.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
             if (!isFocused && !pressedMovementKeys.isEmpty()) {
                 pressedMovementKeys.clear();
                 publishInput();
+            }
+            if (!isFocused && firing) {
+                firing = false;
+                publishAttackInput();
             }
         });
     }
@@ -47,6 +85,15 @@ public final class InputController {
         int vertical = (isPressed(KeyCode.S, KeyCode.DOWN) ? 1 : 0)
                 - (isPressed(KeyCode.W, KeyCode.UP) ? 1 : 0);
         gameClient.send(new PlayerInput(horizontal, vertical));
+    }
+
+    private void updateAttackTarget(MouseEvent event) {
+        attackTargetX = event.getX();
+        attackTargetY = event.getY();
+    }
+
+    private void publishAttackInput() {
+        gameClient.send(new AttackInput(attackTargetX, attackTargetY, firing));
     }
 
     private boolean isPressed(KeyCode first, KeyCode second) {

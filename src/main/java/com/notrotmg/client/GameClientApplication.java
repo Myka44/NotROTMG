@@ -32,9 +32,16 @@ public final class GameClientApplication extends Application implements GameClie
     public void start(Stage stage) {
         SpriteCatalog spriteCatalog = new SpriteCatalog();
         CanvasGameRenderer renderer = new CanvasGameRenderer(canvas, spriteCatalog);
-        renderer.render(new GameSnapshot(GameRules.CANVAS_WIDTH, GameRules.CANVAS_HEIGHT, List.of()));
+        renderer.render(new GameSnapshot(
+                GameRules.CANVAS_WIDTH,
+                GameRules.CANVAS_HEIGHT,
+                List.of(),
+                List.of()
+        ));
 
-        Label instructions = new Label("Move: WASD / arrow keys     Select an item, then Equip or Drop");
+        Label instructions = new Label(
+                "Move: WASD / arrow keys     Shoot: hold left mouse button"
+        );
         instructions.getStyleClass().add("instructions-label");
 
         InventoryPane inventoryPane = new InventoryPane(
@@ -65,7 +72,7 @@ public final class GameClientApplication extends Application implements GameClie
         ).toExternalForm());
         gameClient = new GameClient(GameProtocol.LOCAL_SERVER_URI, new JacksonJsonCodec());
         gameClient.addListener(this);
-        new InputController(gameClient).attach(scene, stage);
+        new InputController(gameClient).attach(scene, stage, canvas);
 
         stage.setTitle("NotROTMG local client");
         stage.setScene(scene);

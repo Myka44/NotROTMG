@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "commandType")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PlayerInput.class, name = "player-input"),
+        @JsonSubTypes.Type(value = AttackInput.class, name = "attack-input"),
         @JsonSubTypes.Type(value = EquipItemCommand.class, name = "equip-item"),
         @JsonSubTypes.Type(value = UnequipItemCommand.class, name = "unequip-item"),
         @JsonSubTypes.Type(value = DropItemCommand.class, name = "drop-item")

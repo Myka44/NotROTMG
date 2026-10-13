@@ -14,18 +14,24 @@ public final class Weapon extends Equipment {
     private final ProjectileSpec projectileSpec;
     private final AttackStrategy attackStrategy;
     private final Supplier<ProjectileBuilder> projectileBuilderFactory;
+    private final double attackCooldownSeconds;
 
     public Weapon(
             String name,
             ItemType type,
             ProjectileSpec projectileSpec,
             AttackStrategy attackStrategy,
-            Supplier<ProjectileBuilder> projectileBuilderFactory
+            Supplier<ProjectileBuilder> projectileBuilderFactory,
+            double attackCooldownSeconds
     ) {
         super(name, requireWeaponType(type), EquipmentSlot.WEAPON);
         this.projectileSpec = Objects.requireNonNull(projectileSpec);
         this.attackStrategy = Objects.requireNonNull(attackStrategy);
         this.projectileBuilderFactory = Objects.requireNonNull(projectileBuilderFactory);
+        if (attackCooldownSeconds <= 0) {
+            throw new IllegalArgumentException("Weapon attack cooldown must be positive");
+        }
+        this.attackCooldownSeconds = attackCooldownSeconds;
     }
 
     public int damageBonus() {
@@ -50,6 +56,10 @@ public final class Weapon extends Equipment {
 
     public Supplier<ProjectileBuilder> projectileBuilderFactory() {
         return projectileBuilderFactory;
+    }
+
+    public double attackCooldownSeconds() {
+        return attackCooldownSeconds;
     }
 
     private static ItemType requireWeaponType(ItemType type) {

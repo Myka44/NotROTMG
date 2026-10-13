@@ -86,6 +86,13 @@ public final class Inventory {
         return Map.copyOf(equippedItems);
     }
 
+    public Optional<Weapon> equippedWeapon() {
+        Equipment equipment = equippedItems.get(EquipmentSlot.WEAPON);
+        return equipment instanceof Weapon weapon
+                ? Optional.of(weapon)
+                : Optional.empty();
+    }
+
     private ItemSlot slotAt(int index) {
         if (index < 0 || index >= itemSlots.size()) {
             throw new IndexOutOfBoundsException("Inventory slot index: " + index);

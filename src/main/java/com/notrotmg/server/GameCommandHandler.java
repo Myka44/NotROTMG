@@ -1,45 +1,51 @@
 package com.notrotmg.server;
 
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
-import com.notrotmg.protocol.clienttoserver.DropItemCommand;
-import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
-import com.notrotmg.protocol.clienttoserver.PlayerInput;
-import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
+import com.notrotmg.protocol.servertoclient.ServerMessage;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
-/** Routes authenticated client commands to the appropriate game-world operation. */
+/** Routes command types to independently registered handling functions. */
 public final class GameCommandHandler {
-    private final AuthoritativeGameWorld world;
+    private final Map<
+            Class<? extends ClientCommand>,
+            BiFunction<String, ClientCommand, Optional<ServerMessage>>
+    > handlers = new HashMap<>();
 
-    public GameCommandHandler(AuthoritativeGameWorld world) {
-        this.world = Objects.requireNonNull(world);
+    public <C extends ClientCommand> GameCommandHandler register(
+            Class<C> commandType,
+            BiFunction<String, C, Optional<ServerMessage>> handler
+    ) {
+        Objects.requireNonNull(commandType);
+        Objects.requireNonNull(handler);
+
+        handlers.put(
+                commandType,
+                (playerId, command) ->
+                        handler.apply(playerId, commandType.cast(command))
+        );
+
+        return this;
     }
 
-    /**
-     * @return true when the command changed private inventory state that should be sent to its owner
-     */
-    public boolean handle(String playerId, ClientCommand command) {
+    /** Returns the optional private response produced by the registered command handler. */
+    public Optional<ServerMessage> handle(String playerId, ClientCommand command) {
         Objects.requireNonNull(playerId);
         Objects.requireNonNull(command);
 
-        if (command instanceof PlayerInput input) {
-            world.acceptInput(playerId, input);
-            return false;
-        }
-        if (command instanceof EquipItemCommand equipItem) {
-            world.equipItem(playerId, equipItem.inventorySlot());
-            return true;
-        }
-        if (command instanceof UnequipItemCommand unequipItem) {
-            return world.unequipItem(playerId, unequipItem.equipmentSlot());
-        }
-        if (command instanceof DropItemCommand dropItem) {
-            return world.dropItem(playerId, dropItem.inventorySlot());
+        BiFunction<String, ClientCommand, Optional<ServerMessage>> handler =
+                handlers.get(command.getClass());
+
+        if (handler == null) {
+            throw new IllegalArgumentException(
+                    "No handler registered for " + command.getClass().getSimpleName()
+            );
         }
 
-        throw new IllegalArgumentException(
-                "Unsupported client command: " + command.getClass().getSimpleName()
-        );
+        return handler.apply(playerId, command);
     }
 }

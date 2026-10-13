@@ -3,7 +3,12 @@ package com.notrotmg.server;
 import com.notrotmg.common.json.JacksonJsonCodec;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.protocol.GameProtocol;
+import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
+import com.notrotmg.protocol.clienttoserver.DropItemCommand;
+import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
+import com.notrotmg.protocol.clienttoserver.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import io.javalin.Javalin;
@@ -14,6 +19,7 @@ import io.javalin.websocket.WsMessageContext;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /** Javalin transport adapter for the authoritative game world. */
 public final class GameServer implements AutoCloseable {
@@ -53,10 +59,42 @@ public final class GameServer implements AutoCloseable {
         this.port = port;
         this.jsonCodec = Objects.requireNonNull(jsonCodec);
         this.world = Objects.requireNonNull(world);
-        this.commandHandler = new GameCommandHandler(world);
+        this.commandHandler = createCommandHandler(this.world);
         this.clients = Objects.requireNonNull(clients);
         this.gameLoop = Objects.requireNonNull(gameLoop);
         this.lastPublishedSnapshot = world.snapshot();
+    }
+
+    private static GameCommandHandler createCommandHandler(AuthoritativeGameWorld world) {
+        return new GameCommandHandler()
+                .register(PlayerInput.class, (playerId, input) -> {
+                    world.acceptInput(playerId, input);
+                    return Optional.empty();
+                })
+                .register(AttackInput.class, (playerId, input) -> {
+                    world.acceptAttackInput(playerId, input);
+                    return Optional.empty();
+                })
+                .register(EquipItemCommand.class, (playerId, command) -> {
+                    world.equipItem(playerId, command.inventorySlot());
+                    return inventoryResponse(world, playerId);
+                })
+                .register(UnequipItemCommand.class, (playerId, command) -> {
+                    boolean changed = world.unequipItem(playerId, command.equipmentSlot());
+                    return changed ? inventoryResponse(world, playerId) : Optional.empty();
+                })
+                .register(DropItemCommand.class, (playerId, command) -> {
+                    boolean changed = world.dropItem(playerId, command.inventorySlot());
+                    return changed ? inventoryResponse(world, playerId) : Optional.empty();
+                });
+    }
+
+    private static Optional<ServerMessage> inventoryResponse(
+            AuthoritativeGameWorld world,
+            String playerId
+    ) {
+        return world.inventorySnapshot(playerId)
+                .map(snapshot -> snapshot);
     }
 
     public synchronized void start() {
@@ -106,10 +144,9 @@ public final class GameServer implements AutoCloseable {
         clients.playerId(connection).ifPresent(playerId -> {
             try {
                 ClientCommand command = jsonCodec.decode(connection.message(), ClientCommand.class);
-                boolean inventoryChanged = commandHandler.handle(playerId, command);
-                if (inventoryChanged) {
-                    sendInventorySnapshot(connection, playerId);
-                }
+
+                commandHandler.handle(playerId, command)
+                        .ifPresent(response -> sendMessage(connection, response));
             } catch (RuntimeException exception) {
                 System.err.println("Rejected client message: " + exception.getMessage());
             }

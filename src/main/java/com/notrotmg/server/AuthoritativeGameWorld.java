@@ -11,6 +11,8 @@ import com.notrotmg.domain.item.CharacterItemFactory;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.WarriorItemFactory;
 import com.notrotmg.domain.item.WizardItemFactory;
+import com.notrotmg.domain.projectile.Projectile;
+import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
@@ -22,6 +24,7 @@ import java.util.Optional;
 
 /** Application service that owns and updates all authoritative domain entities. */
 public final class AuthoritativeGameWorld {
+    private static final int STARTING_WEAPON_INVENTORY_SLOT = 0;
     private static final int[][] SPAWN_POSITIONS = {
             {64, 64},
             {GameRules.CANVAS_WIDTH - GameRules.PLAYER_SIZE - 64, 64},
@@ -37,6 +40,7 @@ public final class AuthoritativeGameWorld {
             GameRules.CANVAS_HEIGHT
     );
     private final Map<String, Player> players = new LinkedHashMap<>();
+    private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
     private final SnapshotMapper snapshotMapper;
 
     public AuthoritativeGameWorld() {
@@ -75,6 +79,13 @@ public final class AuthoritativeGameWorld {
         }
     }
 
+    public synchronized void acceptAttackInput(String playerId, AttackInput input) {
+        Player player = players.get(playerId);
+        if (player != null) {
+            player.attackInput(new Position(input.targetX(), input.targetY()), input.firing());
+        }
+    }
+
     public synchronized void equipItem(String playerId, int inventorySlot) {
         requirePlayer(playerId).equipFromInventorySlot(inventorySlot);
     }
@@ -96,11 +107,29 @@ public final class AuthoritativeGameWorld {
 
     public synchronized GameSnapshot tick() {
         players.values().forEach(player -> player.move(GameRules.FIXED_DELTA_SECONDS, bounds));
+        players.values().stream()
+                .flatMap(player -> player.updateAttack(GameRules.FIXED_DELTA_SECONDS).stream())
+                .forEach(projectile -> projectiles.put(projectile.id(), projectile));
+        projectiles.values().forEach(projectile ->
+                projectile.update(GameRules.FIXED_DELTA_SECONDS)
+        );
+        projectiles.values().removeIf(projectile ->
+                projectile.isExpired() || isOutsideWorld(projectile)
+        );
         return snapshot();
     }
 
     public synchronized GameSnapshot snapshot() {
-        return snapshotMapper.gameSnapshot(players.values());
+        return snapshotMapper.gameSnapshot(players.values(), projectiles.values());
+    }
+
+    private boolean isOutsideWorld(Projectile projectile) {
+        double margin = projectile.length();
+        Position position = projectile.position();
+        return position.x() < -margin
+                || position.y() < -margin
+                || position.x() > bounds.width() + margin
+                || position.y() > bounds.height() + margin;
     }
 
     private void addStartingItems(Player player) {
@@ -109,6 +138,7 @@ public final class AuthoritativeGameWorld {
         player.addItem(itemFactory.createArmor());
         player.addItem(itemFactory.createAbility());
         player.addItem(itemFactory.createRing());
+        player.equipFromInventorySlot(STARTING_WEAPON_INVENTORY_SLOT);
     }
 
     private CharacterItemFactory itemFactoryFor(CharacterClass characterClass) {

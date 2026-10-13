@@ -4,7 +4,11 @@ import com.notrotmg.domain.item.Equipment;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.Inventory;
 import com.notrotmg.domain.item.Item;
+import com.notrotmg.domain.item.Weapon;
+import com.notrotmg.domain.projectile.AttackContext;
+import com.notrotmg.domain.projectile.Projectile;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -13,6 +17,9 @@ public final class Player extends Entity implements Movable {
     private final CharacterClass characterClass;
     private final Inventory inventory = new Inventory();
     private Vector2 movementDirection = Vector2.ZERO;
+    private Position attackTarget;
+    private boolean firing;
+    private double remainingAttackCooldown;
     private int level = 1;
     private long experience;
 
@@ -24,6 +31,42 @@ public final class Player extends Entity implements Movable {
 
     public void movementDirection(Vector2 direction) {
         movementDirection = Objects.requireNonNull(direction).normalized();
+    }
+
+    public void attackInput(Position target, boolean firing) {
+        attackTarget = Objects.requireNonNull(target);
+        this.firing = firing;
+    }
+
+    public List<Projectile> updateAttack(double deltaSeconds) {
+        if (deltaSeconds < 0) {
+            throw new IllegalArgumentException("Delta time cannot be negative");
+        }
+        remainingAttackCooldown = Math.max(0, remainingAttackCooldown - deltaSeconds);
+        if (!firing || attackTarget == null || remainingAttackCooldown > 0) {
+            return List.of();
+        }
+
+        Optional<Weapon> equippedWeapon = inventory.equippedWeapon();
+        if (equippedWeapon.isEmpty()) {
+            return List.of();
+        }
+
+        Position origin = new Position(
+                position().x() + size() / 2,
+                position().y() + size() / 2
+        );
+        Vector2 aimDirection = new Vector2(
+                attackTarget.x() - origin.x(),
+                attackTarget.y() - origin.y()
+        );
+        if (aimDirection.equals(Vector2.ZERO)) {
+            return List.of();
+        }
+
+        Weapon weapon = equippedWeapon.orElseThrow();
+        remainingAttackCooldown = weapon.attackCooldownSeconds();
+        return weapon.attack(new AttackContext(id(), origin, aimDirection));
     }
 
     @Override
