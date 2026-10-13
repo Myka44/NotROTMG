@@ -12,7 +12,8 @@ public final class WarriorItemFactory implements CharacterItemFactory {
                 ItemType.SWORD,
                 new ProjectileSpec("iron-sword-projectile", 18, 420, 8, 0.8),
                 new SingleShotStrategy(),
-                () -> new KineticProjectileBuilder(3)
+                () -> new KineticProjectileBuilder(3),
+                0.35
         );
     }
 

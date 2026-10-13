@@ -12,7 +12,8 @@ public final class ArcherItemFactory implements CharacterItemFactory {
                 ItemType.BOW,
                 new ProjectileSpec("arrow-projectile", 15, 520, 6, 1.2),
                 new SingleShotStrategy(),
-                () -> new KineticProjectileBuilder(2)
+                () -> new KineticProjectileBuilder(2),
+                0.25
         );
     }
 

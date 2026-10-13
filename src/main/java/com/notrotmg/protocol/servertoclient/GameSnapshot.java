@@ -6,9 +6,11 @@ import java.util.List;
 public record GameSnapshot(
         int canvasWidth,
         int canvasHeight,
-        List<PlayerSnapshot> players
+        List<PlayerSnapshot> players,
+        List<ProjectileSnapshot> projectiles
 ) implements Snapshot {
     public GameSnapshot {
         players = List.copyOf(players);
+        projectiles = List.copyOf(projectiles);
     }
 }

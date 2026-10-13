@@ -2,6 +2,7 @@ package com.notrotmg.client;
 
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
+import com.notrotmg.protocol.servertoclient.ProjectileSnapshot;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -26,9 +27,42 @@ public final class CanvasGameRenderer {
     public void render(GameSnapshot snapshot) {
         GraphicsContext graphics = canvas.getGraphicsContext2D();
         drawGround(graphics, snapshot.canvasWidth(), snapshot.canvasHeight());
+        for (ProjectileSnapshot projectile : snapshot.projectiles()) {
+            drawProjectile(graphics, projectile);
+        }
         for (PlayerSnapshot player : snapshot.players()) {
             drawPlayer(graphics, player, snapshot.canvasHeight());
         }
+    }
+
+    private void drawProjectile(GraphicsContext graphics, ProjectileSnapshot projectile) {
+        double angleDegrees = Math.toDegrees(Math.atan2(
+                projectile.trajectoryY(),
+                projectile.trajectoryX()
+        ));
+
+        graphics.save();
+        graphics.translate(projectile.x(), projectile.y());
+        graphics.rotate(angleDegrees);
+        graphics.setFill(projectileColor(projectile.spriteId()));
+        graphics.fillRect(
+                -projectile.length() / 2,
+                -2,
+                projectile.length(),
+                4
+        );
+        graphics.restore();
+    }
+
+    private Color projectileColor(String spriteId) {
+        return switch (spriteId) {
+            case "iron-sword-projectile" -> Color.web("#d8e1e8");
+            case "arrow-projectile" -> Color.web("#e6c36a");
+            case "magic-bolt-projectile" -> Color.web("#a978e8");
+            case "slime-projectile" -> Color.web("#68c96b");
+            case "guardian-projectile" -> Color.web("#df65c8");
+            default -> Color.web("#f5d76e");
+        };
     }
 
     private void drawGround(GraphicsContext graphics, int width, int height) {

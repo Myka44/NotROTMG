@@ -7,11 +7,13 @@ import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.Inventory;
 import com.notrotmg.domain.item.Item;
 import com.notrotmg.domain.item.ItemSlot;
+import com.notrotmg.domain.projectile.Projectile;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySlotSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
 import com.notrotmg.protocol.servertoclient.ItemSnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
+import com.notrotmg.protocol.servertoclient.ProjectileSnapshot;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,14 +23,21 @@ import java.util.Map;
 
 /** Converts authoritative domain objects into immutable network messages. */
 public final class SnapshotMapper {
-    public GameSnapshot gameSnapshot(Collection<Player> players) {
+    public GameSnapshot gameSnapshot(
+            Collection<Player> players,
+            Collection<Projectile> projectiles
+    ) {
         List<PlayerSnapshot> playerSnapshots = players.stream()
                 .map(this::playerSnapshot)
+                .toList();
+        List<ProjectileSnapshot> projectileSnapshots = projectiles.stream()
+                .map(this::projectileSnapshot)
                 .toList();
         return new GameSnapshot(
                 GameRules.CANVAS_WIDTH,
                 GameRules.CANVAS_HEIGHT,
-                playerSnapshots
+                playerSnapshots,
+                projectileSnapshots
         );
     }
 
@@ -59,6 +68,18 @@ public final class SnapshotMapper {
                 player.currentHealth(),
                 player.stats().maxHealth(),
                 player.characterClass()
+        );
+    }
+
+    private ProjectileSnapshot projectileSnapshot(Projectile projectile) {
+        return new ProjectileSnapshot(
+                projectile.id(),
+                projectile.spriteId(),
+                projectile.position().x(),
+                projectile.position().y(),
+                projectile.trajectory().x(),
+                projectile.trajectory().y(),
+                projectile.length()
         );
     }
 
