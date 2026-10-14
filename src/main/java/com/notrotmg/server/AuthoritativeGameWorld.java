@@ -17,6 +17,8 @@ import com.notrotmg.domain.item.WarriorItemFactory;
 import com.notrotmg.domain.item.WizardItemFactory;
 import com.notrotmg.domain.projectile.Projectile;
 import com.notrotmg.domain.projectile.ProjectileSide;
+import com.notrotmg.domain.map.MapFeature;
+import com.notrotmg.domain.map.WorldMapSetup;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
@@ -33,19 +35,18 @@ import java.util.Optional;
 public final class AuthoritativeGameWorld {
     private static final int STARTING_WEAPON_INVENTORY_SLOT = 0;
     private static final int[][] SPAWN_POSITIONS = {
-            {64, 64},
-            {GameRules.CANVAS_WIDTH - GameRules.PLAYER_SIZE - 64, 64},
-            {64, GameRules.CANVAS_HEIGHT - GameRules.PLAYER_SIZE - 64},
-            {
-                    GameRules.CANVAS_WIDTH - GameRules.PLAYER_SIZE - 64,
-                    GameRules.CANVAS_HEIGHT - GameRules.PLAYER_SIZE - 64
-            }
+            {900, 560},
+            {1000, 560},
+            {900, 660},
+            {1000, 660}
     };
 
     private final WorldBounds bounds = new WorldBounds(
-            GameRules.CANVAS_WIDTH,
-            GameRules.CANVAS_HEIGHT
+            GameRules.WORLD_WIDTH,
+            GameRules.WORLD_HEIGHT
     );
+    private final MapFeature map = WorldMapSetup.createWorld();
+    
     private final Map<String, Player> players = new LinkedHashMap<>();
     private final Map<String, Enemy> enemies = new LinkedHashMap<>();
     private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
@@ -151,7 +152,7 @@ public final class AuthoritativeGameWorld {
     }
 
     public synchronized GameSnapshot snapshot() {
-        return snapshotMapper.gameSnapshot(players.values(), enemies.values(), projectiles.values());
+        return snapshotMapper.gameSnapshot(players.values(), enemies.values(), projectiles.values(), map);
     }
 
     private Player nearestLivingPlayer(Enemy enemy) {

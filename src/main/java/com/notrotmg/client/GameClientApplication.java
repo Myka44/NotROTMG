@@ -27,6 +27,7 @@ public final class GameClientApplication extends Application implements GameClie
     private final Label statusLabel = new Label("Disconnected");
     private ClientMessageHandler messageHandler;
     private GameClient gameClient;
+    private InputController inputController;
 
     @Override
     public void start(Stage stage) {
@@ -37,7 +38,11 @@ public final class GameClientApplication extends Application implements GameClie
                 GameRules.CANVAS_HEIGHT,
                 List.of(),
                 List.of(),
-                List.of()
+                List.of(),
+                List.of(),
+                GameRules.WORLD_WIDTH,
+                GameRules.WORLD_HEIGHT,
+                null
         ));
 
         Label instructions = new Label(
@@ -73,7 +78,8 @@ public final class GameClientApplication extends Application implements GameClie
         ).toExternalForm());
         gameClient = new GameClient(GameProtocol.LOCAL_SERVER_URI, new JacksonJsonCodec());
         gameClient.addListener(this);
-        new InputController(gameClient).attach(scene, stage, canvas);
+        inputController = new InputController(gameClient, renderer);
+        inputController.attach(scene, stage, canvas);
 
         stage.setTitle("NotROTMG local client");
         stage.setScene(scene);
@@ -99,7 +105,12 @@ public final class GameClientApplication extends Application implements GameClie
 
     @Override
     public void onMessage(ServerMessage message) {
-        Platform.runLater(() -> messageHandler.handle(message));
+        Platform.runLater(() -> {
+            messageHandler.handle(message);
+            if (message instanceof GameSnapshot && inputController != null) {
+                inputController.refreshAimAfterCameraUpdate();
+            }
+        });
     }
 
     @Override

@@ -8,12 +8,15 @@ import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.Inventory;
 import com.notrotmg.domain.item.Item;
 import com.notrotmg.domain.item.ItemSlot;
+import com.notrotmg.domain.map.MapFeature;
+import com.notrotmg.domain.map.MapObject;
 import com.notrotmg.domain.projectile.Projectile;
 import com.notrotmg.protocol.servertoclient.EnemySnapshot;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySlotSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
 import com.notrotmg.protocol.servertoclient.ItemSnapshot;
+import com.notrotmg.protocol.servertoclient.MapObjectSnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
 import com.notrotmg.protocol.servertoclient.ProjectileSnapshot;
 
@@ -28,7 +31,8 @@ public final class SnapshotMapper {
     public GameSnapshot gameSnapshot(
             Collection<Player> players,
             Collection<Enemy> enemies,
-            Collection<Projectile> projectiles
+            Collection<Projectile> projectiles,
+            MapFeature map
     ) {
         List<PlayerSnapshot> playerSnapshots = players.stream()
                 .map(this::playerSnapshot)
@@ -39,12 +43,19 @@ public final class SnapshotMapper {
         List<ProjectileSnapshot> projectileSnapshots = projectiles.stream()
                 .map(this::projectileSnapshot)
                 .toList();
+        List<MapObjectSnapshot> mapObjectSnapshots = map.objects().stream()
+                .map(this::mapObjectSnapshot)
+                .toList();
         return new GameSnapshot(
                 GameRules.CANVAS_WIDTH,
                 GameRules.CANVAS_HEIGHT,
                 playerSnapshots,
                 enemySnapshots,
-                projectileSnapshots
+                projectileSnapshots,
+                mapObjectSnapshots,
+                GameRules.WORLD_WIDTH,
+                GameRules.WORLD_HEIGHT,
+                null
         );
     }
 
@@ -101,6 +112,18 @@ public final class SnapshotMapper {
                 projectile.length()
         );
     }
+
+        private MapObjectSnapshot mapObjectSnapshot(MapObject mapObject) {
+                return new MapObjectSnapshot(
+                                mapObject.id(),
+                                mapObject.type(),
+                                mapObject.position().x(),
+                                mapObject.position().y(),
+                                mapObject.width(),
+                                mapObject.height(),
+                                mapObject.solid()
+                );
+        }
 
     private ItemSnapshot itemSnapshot(Item item) {
         EquipmentSlot equipmentSlot = item instanceof Equipment equipment

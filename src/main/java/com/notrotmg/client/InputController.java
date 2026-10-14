@@ -2,6 +2,7 @@ package com.notrotmg.client;
 
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
@@ -16,20 +17,28 @@ import java.util.Set;
 /** Translates JavaFX key state into transport-neutral player input messages. */
 public final class InputController {
     private final GameClient gameClient;
+    private final CanvasGameRenderer gameRenderer;
     private final Set<KeyCode> pressedMovementKeys = EnumSet.noneOf(KeyCode.class);
+    private Canvas canvas;
+    private double pointerX;
+    private double pointerY;
+    private double lastAimCameraX;
+    private double lastAimCameraY;
+    private boolean hasPointer;
     private double attackTargetX;
     private double attackTargetY;
     private boolean firing;
 
-    public InputController(GameClient gameClient) {
+    public InputController(GameClient gameClient, CanvasGameRenderer gameRenderer) {
         this.gameClient = Objects.requireNonNull(gameClient);
+        this.gameRenderer = Objects.requireNonNull(gameRenderer);
     }
 
     //stage pats window, o scene content
     public void attach(Scene scene, Stage stage, Canvas canvas) {
         Objects.requireNonNull(scene);
         Objects.requireNonNull(stage);
-        Objects.requireNonNull(canvas);
+        this.canvas = Objects.requireNonNull(canvas);
 
         scene.setOnKeyPressed(event -> {
             if (isMovementKey(event.getCode()) && pressedMovementKeys.add(event.getCode())) {
@@ -88,8 +97,31 @@ public final class InputController {
     }
 
     private void updateAttackTarget(MouseEvent event) {
-        attackTargetX = event.getX();
-        attackTargetY = event.getY();
+        Point2D canvasPoint = canvas.sceneToLocal(event.getSceneX(), event.getSceneY());
+        pointerX = canvasPoint.getX();
+        pointerY = canvasPoint.getY();
+        hasPointer = true;
+        updateWorldAttackTarget();
+    }
+
+    public void refreshAimAfterCameraUpdate() {
+        if (!firing || !hasPointer) {
+            return;
+        }
+
+        double cameraX = gameRenderer.worldX(0);
+        double cameraY = gameRenderer.worldY(0);
+        if (cameraX != lastAimCameraX || cameraY != lastAimCameraY) {
+            updateWorldAttackTarget();
+            publishAttackInput();
+        }
+    }
+
+    private void updateWorldAttackTarget() {
+        lastAimCameraX = gameRenderer.worldX(0);
+        lastAimCameraY = gameRenderer.worldY(0);
+        attackTargetX = pointerX + lastAimCameraX;
+        attackTargetY = pointerY + lastAimCameraY;
     }
 
     private void publishAttackInput() {

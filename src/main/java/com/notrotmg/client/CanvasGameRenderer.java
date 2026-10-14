@@ -2,6 +2,7 @@ package com.notrotmg.client;
 
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.EnemySnapshot;
+import com.notrotmg.protocol.servertoclient.MapObjectSnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
 import com.notrotmg.protocol.servertoclient.ProjectileSnapshot;
 import javafx.scene.canvas.Canvas;
@@ -19,6 +20,8 @@ public final class CanvasGameRenderer {
     private static final Color STONE = Color.web("#71806f");
     private final Canvas canvas;
     private final SpriteCatalog spriteCatalog;
+    private double cameraX;
+    private double cameraY;
 
     public CanvasGameRenderer(Canvas canvas, SpriteCatalog spriteCatalog) {
         this.canvas = Objects.requireNonNull(canvas);
@@ -27,19 +30,59 @@ public final class CanvasGameRenderer {
 
     public void render(GameSnapshot snapshot) {
         GraphicsContext graphics = canvas.getGraphicsContext2D();
-        drawGround(graphics, snapshot.canvasWidth(), snapshot.canvasHeight());
+        updateCamera(snapshot);
+        graphics.save();
+        graphics.translate(-cameraX, -cameraY);
+        drawGround(graphics, snapshot.canvasWidth(), snapshot.canvasHeight(), cameraX, cameraY);
+        for (MapObjectSnapshot mapObject : snapshot.mapObjects()) {
+            drawMapObject(graphics, mapObject);
+        }
         for (ProjectileSnapshot projectile : snapshot.projectiles()) {
             drawProjectile(graphics, projectile);
         }
         for (EnemySnapshot enemy : snapshot.enemies()) {
-            drawEnemy(graphics, enemy, snapshot.canvasHeight());
+            drawEnemy(graphics, enemy, cameraY, snapshot.canvasHeight());
         }
         for (PlayerSnapshot player : snapshot.players()) {
-            drawPlayer(graphics, player, snapshot.canvasHeight());
+            drawPlayer(graphics, player, cameraY, snapshot.canvasHeight());
         }
+        graphics.restore();
     }
 
-    private void drawEnemy(GraphicsContext graphics, EnemySnapshot enemy, int canvasHeight) {
+    public double worldX(double screenX) {
+        return screenX + cameraX;
+    }
+
+    public double worldY(double screenY) {
+        return screenY + cameraY;
+    }
+
+    private void updateCamera(GameSnapshot snapshot) {
+        PlayerSnapshot target = snapshot.players().stream()
+                .filter(player -> player.id().equals(snapshot.controlledPlayerId()))
+                .findFirst()
+                .orElseGet(() -> snapshot.players().stream().findFirst().orElse(null));
+        if (target == null) {
+            cameraX = 0;
+            cameraY = 0;
+            return;
+        }
+
+        cameraX = clampCamera(
+                target.x() + target.size() / 2.0 - snapshot.canvasWidth() / 2.0,
+                snapshot.worldWidth() - snapshot.canvasWidth()
+        );
+        cameraY = clampCamera(
+                target.y() + target.size() / 2.0 - snapshot.canvasHeight() / 2.0,
+                snapshot.worldHeight() - snapshot.canvasHeight()
+        );
+    }
+
+    private double clampCamera(double offset, double maximumOffset) {
+        return Math.max(0, Math.min(Math.max(0, maximumOffset), offset));
+    }
+
+    private void drawEnemy(GraphicsContext graphics, EnemySnapshot enemy, double cameraY, int canvasHeight) {
         double x = enemy.x();
         double y = enemy.y();
         double size = enemy.size();
@@ -57,7 +100,9 @@ public final class CanvasGameRenderer {
         graphics.setFill(Color.web("#f6e9d1"));
         graphics.fillRect(x + size * 0.28, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
         graphics.fillRect(x + size * 0.60, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
-        drawHealthBar(graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), canvasHeight);
+        drawHealthBar(
+            graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), cameraY, canvasHeight
+        );
     }
 
     private void drawProjectile(GraphicsContext graphics, ProjectileSnapshot projectile) {
@@ -79,6 +124,38 @@ public final class CanvasGameRenderer {
         graphics.restore();
     }
 
+    private void drawMapObject(GraphicsContext graphics, MapObjectSnapshot mapObject) {
+        double x = mapObject.x();
+        double y = mapObject.y();
+        double width = mapObject.width();
+        double height = mapObject.height();
+
+        switch (mapObject.type()) {
+            case "cemetery" -> {
+                graphics.setFill(Color.web("#49483d"));
+                graphics.fillRect(x, y, width, height);
+                graphics.setStroke(Color.web("#88836a"));
+                graphics.setLineWidth(3);
+                graphics.strokeRect(x + 1.5, y + 1.5, width - 3, height - 3);
+                graphics.setStroke(Color.web("#6f6a56"));
+                graphics.setLineWidth(1);
+                graphics.strokeRect(x + 6.5, y + 6.5, width - 13, height - 13);
+            }
+            case "gravestone" -> {
+                graphics.setFill(Color.web("#262a2a"));
+                graphics.fillRect(x + 2, y + height - 3, width, 4);
+                graphics.setFill(Color.web("#92948b"));
+                graphics.fillRoundRect(x, y, width, height - 3, 5, 5);
+                graphics.setStroke(Color.web("#d0cfc2"));
+                graphics.strokeLine(x + 4, y + 5, x + width - 4, y + 5);
+            }
+            default -> {
+                graphics.setFill(mapObject.solid() ? Color.web("#62685e") : Color.web("#7d8d65"));
+                graphics.fillRect(x, y, width, height);
+            }
+        }
+    }
+
     private Color projectileColor(String spriteId) {
         return switch (spriteId) {
             case "iron-sword-projectile" -> Color.web("#d8e1e8");
@@ -90,11 +167,21 @@ public final class CanvasGameRenderer {
         };
     }
 
-    private void drawGround(GraphicsContext graphics, int width, int height) {
-        for (int y = 0; y < height; y += TILE_SIZE) {
-            for (int x = 0; x < width; x += TILE_SIZE) {
-                int column = x / TILE_SIZE;
-                int row = y / TILE_SIZE;
+    private void drawGround(
+            GraphicsContext graphics,
+            int width,
+            int height,
+            double cameraX,
+            double cameraY
+    ) {
+        int firstColumn = (int) Math.floor(cameraX / TILE_SIZE);
+        int firstRow = (int) Math.floor(cameraY / TILE_SIZE);
+        int lastColumn = (int) Math.ceil((cameraX + width) / TILE_SIZE);
+        int lastRow = (int) Math.ceil((cameraY + height) / TILE_SIZE);
+        for (int row = firstRow; row < lastRow; row++) {
+            for (int column = firstColumn; column < lastColumn; column++) {
+                int x = column * TILE_SIZE;
+                int y = row * TILE_SIZE;
                 graphics.setFill((column + row) % 2 == 0 ? TILE_A : TILE_B);
                 graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
                 graphics.setStroke(GRID);
@@ -109,7 +196,12 @@ public final class CanvasGameRenderer {
         }
     }
 
-    private void drawPlayer(GraphicsContext graphics, PlayerSnapshot player, int canvasHeight) {
+        private void drawPlayer(
+            GraphicsContext graphics,
+            PlayerSnapshot player,
+            double cameraY,
+            int canvasHeight
+        ) {
         double scale = player.size() / 16.0;
         double x = player.x();
         double y = player.y();
@@ -132,6 +224,7 @@ public final class CanvasGameRenderer {
                 player.size(),
                 player.currentHealth(),
                 player.maxHealth(),
+                cameraY,
                 canvasHeight
         );
     }
@@ -143,10 +236,11 @@ public final class CanvasGameRenderer {
             double size,
             int currentHealth,
             int maxHealth,
+            double cameraY,
             int canvasHeight
     ) {
         double barY = y + size + 3;
-        if (barY + 4 > canvasHeight) {
+        if (barY - cameraY + 4 > canvasHeight) {
             barY = y - 6;
         }
         double healthRatio = maxHealth == 0

@@ -186,10 +186,10 @@ public final class GameServer implements AutoCloseable {
             return;
         }
 
-        String json = jsonCodec.encode(snapshot);
         for (WsContext connection : clients.connections()) {
             try {
-                connection.send(json);
+                String playerId = clients.playerId(connection).orElse(null);
+                connection.send(jsonCodec.encode(snapshot.forPlayer(playerId)));
             } catch (RuntimeException exception) {
                 System.err.println("Could not publish snapshot: " + exception.getMessage());
             }
