@@ -8,6 +8,7 @@ import java.util.Objects;
 public final class Projectile {
     private final String id;
     private final String ownerId;
+    private final ProjectileSide side;
     private final String spriteId;
     private final Vector2 trajectory;
     private final double speed;
@@ -20,6 +21,7 @@ public final class Projectile {
     Projectile(
             String id,
             String ownerId,
+            ProjectileSide side,
             String spriteId,
             Position position,
             Vector2 trajectory,
@@ -45,6 +47,7 @@ public final class Projectile {
         }
         this.id = id;
         this.ownerId = ownerId;
+        this.side = Objects.requireNonNull(side);
         this.spriteId = spriteId;
         this.position = Objects.requireNonNull(position);
         this.trajectory = Objects.requireNonNull(trajectory).normalized();
@@ -76,6 +79,10 @@ public final class Projectile {
 
     public String ownerId() {
         return ownerId;
+    }
+
+    public ProjectileSide side() {
+        return side;
     }
 
     public String spriteId() {

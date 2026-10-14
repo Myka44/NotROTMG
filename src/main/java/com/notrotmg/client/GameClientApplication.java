@@ -36,6 +36,7 @@ public final class GameClientApplication extends Application implements GameClie
                 GameRules.CANVAS_WIDTH,
                 GameRules.CANVAS_HEIGHT,
                 List.of(),
+                List.of(),
                 List.of()
         ));
 

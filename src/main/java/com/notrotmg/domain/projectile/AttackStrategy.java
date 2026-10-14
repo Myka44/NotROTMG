@@ -19,7 +19,7 @@ public interface AttackStrategy {
             ProjectileBuilder builder,
             Vector2 trajectory
     ) {
-        builder.setOwner(context.attackerId());
+        builder.setOwner(context.attackerId(), context.side());
         builder.setMovement(context.origin(), trajectory);
         builder.setStats(spec);
         return builder.build();

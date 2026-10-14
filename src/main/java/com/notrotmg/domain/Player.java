@@ -7,6 +7,7 @@ import com.notrotmg.domain.item.Item;
 import com.notrotmg.domain.item.Weapon;
 import com.notrotmg.domain.projectile.AttackContext;
 import com.notrotmg.domain.projectile.Projectile;
+import com.notrotmg.domain.projectile.ProjectileSide;
 
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +44,7 @@ public final class Player extends Entity implements Movable {
             throw new IllegalArgumentException("Delta time cannot be negative");
         }
         remainingAttackCooldown = Math.max(0, remainingAttackCooldown - deltaSeconds);
-        if (!firing || attackTarget == null || remainingAttackCooldown > 0) {
+        if (!isAlive() || !firing || attackTarget == null || remainingAttackCooldown > 0) {
             return List.of();
         }
 
@@ -52,10 +53,7 @@ public final class Player extends Entity implements Movable {
             return List.of();
         }
 
-        Position origin = new Position(
-                position().x() + size() / 2,
-                position().y() + size() / 2
-        );
+        Position origin = center();
         Vector2 aimDirection = new Vector2(
                 attackTarget.x() - origin.x(),
                 attackTarget.y() - origin.y()
@@ -66,11 +64,14 @@ public final class Player extends Entity implements Movable {
 
         Weapon weapon = equippedWeapon.orElseThrow();
         remainingAttackCooldown = weapon.attackCooldownSeconds();
-        return weapon.attack(new AttackContext(id(), origin, aimDirection));
+        return weapon.attack(new AttackContext(id(), ProjectileSide.PLAYER, origin, aimDirection));
     }
 
     @Override
     public void move(double deltaSeconds, WorldBounds bounds) {
+        if (!isAlive()) {
+            return;
+        }
         double distance = stats().speed() * deltaSeconds;
         position(bounds.clamp(position().translated(movementDirection, distance), size()));
     }
