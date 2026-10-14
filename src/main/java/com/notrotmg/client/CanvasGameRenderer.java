@@ -1,6 +1,7 @@
 package com.notrotmg.client;
 
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
+import com.notrotmg.protocol.servertoclient.EnemySnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
 import com.notrotmg.protocol.servertoclient.ProjectileSnapshot;
 import javafx.scene.canvas.Canvas;
@@ -30,9 +31,33 @@ public final class CanvasGameRenderer {
         for (ProjectileSnapshot projectile : snapshot.projectiles()) {
             drawProjectile(graphics, projectile);
         }
+        for (EnemySnapshot enemy : snapshot.enemies()) {
+            drawEnemy(graphics, enemy, snapshot.canvasHeight());
+        }
         for (PlayerSnapshot player : snapshot.players()) {
             drawPlayer(graphics, player, snapshot.canvasHeight());
         }
+    }
+
+    private void drawEnemy(GraphicsContext graphics, EnemySnapshot enemy, int canvasHeight) {
+        double x = enemy.x();
+        double y = enemy.y();
+        double size = enemy.size();
+        Color body = switch (enemy.type()) {
+            case REGULAR -> Color.web("#65b66c");
+            case BOSS -> Color.web("#8750a7");
+        };
+
+        graphics.setFill(Color.color(0, 0, 0, 0.28));
+        graphics.fillOval(x + size * 0.12, y + size * 0.78, size * 0.8, size * 0.18);
+        graphics.setFill(Color.web("#25232c"));
+        graphics.fillRect(x + 1, y + 1, size - 2, size - 2);
+        graphics.setFill(body);
+        graphics.fillRect(x + 3, y + 3, size - 6, size - 6);
+        graphics.setFill(Color.web("#f6e9d1"));
+        graphics.fillRect(x + size * 0.28, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
+        graphics.fillRect(x + size * 0.60, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
+        drawHealthBar(graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), canvasHeight);
     }
 
     private void drawProjectile(GraphicsContext graphics, ProjectileSnapshot projectile) {
@@ -100,22 +125,37 @@ public final class CanvasGameRenderer {
                 player.size()
         );
 
-        drawHealthBar(graphics, player, canvasHeight);
+        drawHealthBar(
+                graphics,
+                player.x(),
+                player.y(),
+                player.size(),
+                player.currentHealth(),
+                player.maxHealth(),
+                canvasHeight
+        );
     }
 
-    private void drawHealthBar(GraphicsContext graphics, PlayerSnapshot player, int canvasHeight) {
-        double width = player.size();
-        double y = player.y() + player.size() + 3;
-        if (y + 4 > canvasHeight) {
-            y = player.y() - 6;
+    private void drawHealthBar(
+            GraphicsContext graphics,
+            double x,
+            double y,
+            double size,
+            int currentHealth,
+            int maxHealth,
+            int canvasHeight
+    ) {
+        double barY = y + size + 3;
+        if (barY + 4 > canvasHeight) {
+            barY = y - 6;
         }
-        double healthRatio = player.maxHealth() == 0
+        double healthRatio = maxHealth == 0
                 ? 0
-                : Math.max(0, Math.min(1, (double) player.currentHealth() / player.maxHealth()));
+                : Math.max(0, Math.min(1, (double) currentHealth / maxHealth));
 
         graphics.setFill(Color.web("#181818"));
-        graphics.fillRect(player.x(), y, width, 4);
+        graphics.fillRect(x, barY, size, 4);
         graphics.setFill(Color.web("#bf4545"));
-        graphics.fillRect(player.x() + 1, y + 1, (width - 2) * healthRatio, 2);
+        graphics.fillRect(x + 1, barY + 1, (size - 2) * healthRatio, 2);
     }
 }

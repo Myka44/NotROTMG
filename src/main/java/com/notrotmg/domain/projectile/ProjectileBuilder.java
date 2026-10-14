@@ -6,7 +6,7 @@ import com.notrotmg.domain.Vector2;
 public interface ProjectileBuilder {
     void setMovement(Position position, Vector2 trajectory);
 
-    void setOwner(String ownerId);
+    void setOwner(String ownerId, ProjectileSide side);
 
     void setStats(ProjectileSpec spec);
 

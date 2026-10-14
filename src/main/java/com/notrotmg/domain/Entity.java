@@ -36,11 +36,30 @@ public abstract class Entity {
         return size;
     }
 
+    public final Position center() {
+        return new Position(position.x() + size / 2, position.y() + size / 2);
+    }
+
     public final EntityStats stats() {
         return stats;
     }
 
     public final int currentHealth() {
         return currentHealth;
+    }
+
+    public final boolean isAlive() {
+        return currentHealth > 0;
+    }
+
+    public final void takeDamage(double damage) {
+        if (!Double.isFinite(damage) || damage < 0) {
+            throw new IllegalArgumentException("Damage must be finite and non-negative");
+        }
+        if (!isAlive() || damage == 0) {
+            return;
+        }
+        int effectiveDamage = Math.max(1, (int) Math.round(damage - stats.defense() / 2.0));
+        currentHealth = Math.max(0, currentHealth - effectiveDamage);
     }
 }

@@ -8,6 +8,7 @@ import java.util.Objects;
 /** Information that varies for each individual attack. */
 public record AttackContext(
         String attackerId,
+        ProjectileSide side,
         Position origin,
         Vector2 aimDirection
 ) {
@@ -16,6 +17,7 @@ public record AttackContext(
             throw new IllegalArgumentException("Attacker ID cannot be blank");
         }
         Objects.requireNonNull(origin);
+        Objects.requireNonNull(side);
         Objects.requireNonNull(aimDirection);
 
         aimDirection = aimDirection.normalized();

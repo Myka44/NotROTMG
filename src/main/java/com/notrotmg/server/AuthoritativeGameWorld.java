@@ -1,22 +1,29 @@
 package com.notrotmg.server;
 
 import com.notrotmg.domain.CharacterClass;
+import com.notrotmg.domain.Entity;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.domain.Player;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.Vector2;
 import com.notrotmg.domain.WorldBounds;
+import com.notrotmg.domain.enemy.Enemy;
+import com.notrotmg.domain.enemy.EnemyFactory;
+import com.notrotmg.domain.enemy.EnemyType;
 import com.notrotmg.domain.item.ArcherItemFactory;
 import com.notrotmg.domain.item.CharacterItemFactory;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.WarriorItemFactory;
 import com.notrotmg.domain.item.WizardItemFactory;
 import com.notrotmg.domain.projectile.Projectile;
+import com.notrotmg.domain.projectile.ProjectileSide;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
 
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +47,7 @@ public final class AuthoritativeGameWorld {
             GameRules.CANVAS_HEIGHT
     );
     private final Map<String, Player> players = new LinkedHashMap<>();
+    private final Map<String, Enemy> enemies = new LinkedHashMap<>();
     private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
     private final SnapshotMapper snapshotMapper;
 
@@ -49,6 +57,12 @@ public final class AuthoritativeGameWorld {
 
     public AuthoritativeGameWorld(SnapshotMapper snapshotMapper) {
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
+        enemies.put("slime-1", EnemyFactory.create(
+                EnemyType.REGULAR, "slime-1", new Position(220, 170)
+        ));
+        enemies.put("boss-1", EnemyFactory.create(
+                EnemyType.BOSS, "boss-1", new Position(400, 260)
+        ));
     }
 
     public synchronized GameSnapshot addPlayer(String playerId) {
@@ -110,17 +124,67 @@ public final class AuthoritativeGameWorld {
         players.values().stream()
                 .flatMap(player -> player.updateAttack(GameRules.FIXED_DELTA_SECONDS).stream())
                 .forEach(projectile -> projectiles.put(projectile.id(), projectile));
-        projectiles.values().forEach(projectile ->
-                projectile.update(GameRules.FIXED_DELTA_SECONDS)
-        );
-        projectiles.values().removeIf(projectile ->
-                projectile.isExpired() || isOutsideWorld(projectile)
-        );
+        for (Enemy enemy : enemies.values()) {
+            Player target = nearestLivingPlayer(enemy);
+            if (target != null) {
+                enemy.update(target.center(), GameRules.FIXED_DELTA_SECONDS, bounds)
+                        .forEach(projectile -> projectiles.put(projectile.id(), projectile));
+            }
+        }
+
+        Iterator<Projectile> iterator = projectiles.values().iterator();
+        while (iterator.hasNext()) {
+            Projectile projectile = iterator.next();
+            Position previousPosition = projectile.position();
+            projectile.update(GameRules.FIXED_DELTA_SECONDS);
+
+            Entity target = firstHitTarget(projectile, previousPosition);
+            if (target != null) {
+                target.takeDamage(projectile.damage());
+                iterator.remove();
+            } else if (projectile.isExpired() || isOutsideWorld(projectile)) {
+                iterator.remove();
+            }
+        }
+        enemies.values().removeIf(enemy -> !enemy.isAlive());
         return snapshot();
     }
 
     public synchronized GameSnapshot snapshot() {
-        return snapshotMapper.gameSnapshot(players.values(), projectiles.values());
+        return snapshotMapper.gameSnapshot(players.values(), enemies.values(), projectiles.values());
+    }
+
+    private Player nearestLivingPlayer(Enemy enemy) {
+        Position origin = enemy.center();
+        return players.values().stream()
+                .filter(Player::isAlive)
+                .min(Comparator.comparingDouble(player -> squaredDistance(origin, player.center())))
+                .orElse(null);
+    }
+
+    private static double squaredDistance(Position first, Position second) {
+        double dx = first.x() - second.x();
+        double dy = first.y() - second.y();
+        return dx * dx + dy * dy;
+    }
+
+    private Entity firstHitTarget(Projectile projectile, Position previousPosition) {
+        Iterable<? extends Entity> targets = projectile.side() == ProjectileSide.PLAYER
+                ? enemies.values()
+                : players.values();
+        Entity firstTarget = null;
+        double firstFraction = Double.POSITIVE_INFINITY;
+        for (Entity target : targets) {
+            if (!target.isAlive()) {
+                continue;
+            }
+            double fraction = ProjectileCollision.hitFraction(projectile, previousPosition, target);
+            if (fraction < firstFraction) {
+                firstFraction = fraction;
+                firstTarget = target;
+            }
+        }
+        return firstTarget;
     }
 
     private boolean isOutsideWorld(Projectile projectile) {

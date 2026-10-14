@@ -25,6 +25,9 @@ public final class RegularEnemy extends Enemy {
     private static final AttackStrategy ATTACK_STRATEGY = new SingleShotStrategy();
     private static final Supplier<ProjectileBuilder> PROJECTILE_BUILDER =
             () -> new KineticProjectileBuilder(4);
+    private static final double STOP_DISTANCE = 110;
+    private static final double ATTACK_RANGE = 240;
+    private static final double ATTACK_COOLDOWN_SECONDS = 1.2;
 
     public RegularEnemy(String id, Position position) {
         super(
@@ -36,7 +39,10 @@ public final class RegularEnemy extends Enemy {
                 STATS,
                 PROJECTILE,
                 ATTACK_STRATEGY,
-                PROJECTILE_BUILDER
+                PROJECTILE_BUILDER,
+                STOP_DISTANCE,
+                ATTACK_RANGE,
+                ATTACK_COOLDOWN_SECONDS
         );
     }
 
@@ -48,7 +54,10 @@ public final class RegularEnemy extends Enemy {
             EntityStats stats,
             ProjectileSpec projectileSpec,
             AttackStrategy attackStrategy,
-            Supplier<ProjectileBuilder> projectileBuilderFactory
+            Supplier<ProjectileBuilder> projectileBuilderFactory,
+            double stopDistance,
+            double attackRange,
+            double attackCooldownSeconds
     ) {
         super(
                 id,
@@ -59,7 +68,10 @@ public final class RegularEnemy extends Enemy {
                 stats,
                 projectileSpec,
                 attackStrategy,
-                projectileBuilderFactory
+                projectileBuilderFactory,
+                stopDistance,
+                attackRange,
+                attackCooldownSeconds
         );
     }
 
@@ -73,7 +85,10 @@ public final class RegularEnemy extends Enemy {
                 stats(),
                 projectileSpec(),
                 attackStrategy(),
-                projectileBuilderFactory()
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds()
         );
     }
 }

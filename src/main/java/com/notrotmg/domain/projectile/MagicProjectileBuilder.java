@@ -13,6 +13,7 @@ public final class MagicProjectileBuilder implements ProjectileBuilder {
     private Position position;
     private Vector2 trajectory;
     private String ownerId;
+    private ProjectileSide side;
     private ProjectileSpec spec;
 
     public MagicProjectileBuilder(String element) {
@@ -29,8 +30,9 @@ public final class MagicProjectileBuilder implements ProjectileBuilder {
     }
 
     @Override
-    public void setOwner(String ownerId) {
+    public void setOwner(String ownerId, ProjectileSide side) {
         this.ownerId = ownerId;
+        this.side = side;
     }
 
     @Override
@@ -48,6 +50,7 @@ public final class MagicProjectileBuilder implements ProjectileBuilder {
         return new Projectile(
                 UUID.randomUUID().toString(),
                 ownerId,
+                side,
                 stats.spriteId(),
                 position,
                 trajectory,
