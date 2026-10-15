@@ -50,6 +50,7 @@ public final class AuthoritativeGameWorld {
     private final Map<String, Enemy> enemies = new LinkedHashMap<>();
     private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
     private final SnapshotMapper snapshotMapper;
+    private final CommandInvoker commandInvoker = new CommandInvoker();
 
     public AuthoritativeGameWorld() {
         this(new SnapshotMapper());
@@ -57,12 +58,8 @@ public final class AuthoritativeGameWorld {
 
     public AuthoritativeGameWorld(SnapshotMapper snapshotMapper) {
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
-        enemies.put("slime-1", EnemyFactory.create(
-                EnemyType.REGULAR, "slime-1", new Position(220, 170)
-        ));
-        enemies.put("boss-1", EnemyFactory.create(
-                EnemyType.BOSS, "boss-1", new Position(400, 260)
-        ));
+        commandInvoker.execute(spawnCommand(EnemyType.REGULAR, "slime-1", new Position(220, 170)));
+        commandInvoker.execute(spawnCommand(EnemyType.BOSS, "boss-1", new Position(400, 260)));
     }
 
     public synchronized GameSnapshot addPlayer(String playerId) {
@@ -148,6 +145,38 @@ public final class AuthoritativeGameWorld {
         }
         enemies.values().removeIf(enemy -> !enemy.isAlive());
         return snapshot();
+    }
+
+    public synchronized boolean spawn(Enemy enemy) {
+        Objects.requireNonNull(enemy);
+        if (enemies.containsKey(enemy.id())) {
+            return false;
+        }
+        enemies.put(enemy.id(), enemy);
+        return true;
+    }
+
+    public synchronized boolean despawn(String enemyId) {
+        Objects.requireNonNull(enemyId);
+        return enemies.remove(enemyId) != null;
+    }
+
+    /** Undoes the most recent command run through the invoker. */
+    public synchronized boolean undoLastCommand() {
+        return commandInvoker.undo();
+    }
+
+    /** Re-applies the most recently undone command. */
+    public synchronized boolean redoLastCommand() {
+        return commandInvoker.redo();
+    }
+
+    private GameCommand spawnCommand(EnemyType type, String enemyId, Position position) {
+        Enemy enemy = EnemyFactory.create(type, enemyId, position);
+        return GameCommand.of(
+                () -> spawn(enemy),
+                () -> despawn(enemy.id())
+        );
     }
 
     public synchronized GameSnapshot snapshot() {

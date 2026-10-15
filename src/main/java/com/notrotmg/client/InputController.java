@@ -1,7 +1,5 @@
 package com.notrotmg.client;
 
-import com.notrotmg.protocol.clienttoserver.AttackInput;
-import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyCode;
@@ -15,14 +13,14 @@ import java.util.Set;
 
 /** Translates JavaFX key state into transport-neutral player input messages. */
 public final class InputController {
-    private final GameClient gameClient;
+    private final GameSessionFacade session;
     private final Set<KeyCode> pressedMovementKeys = EnumSet.noneOf(KeyCode.class);
     private double attackTargetX;
     private double attackTargetY;
     private boolean firing;
 
-    public InputController(GameClient gameClient) {
-        this.gameClient = Objects.requireNonNull(gameClient);
+    public InputController(GameSessionFacade session) {
+        this.session = Objects.requireNonNull(session);
     }
 
     //stage pats window, o scene content
@@ -84,7 +82,7 @@ public final class InputController {
                 - (isPressed(KeyCode.A, KeyCode.LEFT) ? 1 : 0);
         int vertical = (isPressed(KeyCode.S, KeyCode.DOWN) ? 1 : 0)
                 - (isPressed(KeyCode.W, KeyCode.UP) ? 1 : 0);
-        gameClient.send(new PlayerInput(horizontal, vertical));
+        session.move(horizontal, vertical);
     }
 
     private void updateAttackTarget(MouseEvent event) {
@@ -93,7 +91,7 @@ public final class InputController {
     }
 
     private void publishAttackInput() {
-        gameClient.send(new AttackInput(attackTargetX, attackTargetY, firing));
+        session.attack(attackTargetX, attackTargetY, firing);
     }
 
     private boolean isPressed(KeyCode first, KeyCode second) {
