@@ -29,7 +29,20 @@ public final class InputController {
         Objects.requireNonNull(stage);
         Objects.requireNonNull(canvas);
 
+        attackTargetX = canvas.getWidth() / 2;
+        attackTargetY = canvas.getHeight() / 2;
+
         scene.setOnKeyPressed(event -> {
+            if (event.isControlDown() && event.getCode() == KeyCode.Z) {
+                session.undo();
+                event.consume();
+                return;
+            }
+            if (event.isControlDown() && event.getCode() == KeyCode.E) {
+                session.spawnEnemy(attackTargetX, attackTargetY);
+                event.consume();
+                return;
+            }
             if (isMovementKey(event.getCode()) && pressedMovementKeys.add(event.getCode())) {
                 publishInput();
                 event.consume();
@@ -50,6 +63,7 @@ public final class InputController {
                 event.consume();
             }
         });
+        canvas.setOnMouseMoved(this::updateAttackTarget);
         canvas.setOnMouseDragged(event -> {
             if (firing) {
                 updateAttackTarget(event);

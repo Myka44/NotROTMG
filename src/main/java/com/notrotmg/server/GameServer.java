@@ -2,13 +2,17 @@ package com.notrotmg.server;
 
 import com.notrotmg.common.json.JacksonJsonCodec;
 import com.notrotmg.domain.GameRules;
+import com.notrotmg.domain.Position;
+import com.notrotmg.domain.enemy.EnemyType;
 import com.notrotmg.protocol.GameProtocol;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
 import com.notrotmg.protocol.clienttoserver.DropItemCommand;
 import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.SpawnEnemyRequest;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
+import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import io.javalin.Javalin;
@@ -86,6 +90,17 @@ public final class GameServer implements AutoCloseable {
                 .register(DropItemCommand.class, (playerId, command) -> {
                     boolean changed = world.dropItem(playerId, command.inventorySlot());
                     return changed ? inventoryResponse(world, playerId) : Optional.empty();
+                })
+                .register(SpawnEnemyRequest.class, (playerId, request) -> {
+                    world.spawnEnemy(
+                            EnemyType.REGULAR,
+                            new Position(request.x(), request.y())
+                    );
+                    return Optional.empty();
+                })
+                .register(UndoCommand.class, (playerId, command) -> {
+                    world.undoLastCommand();
+                    return Optional.empty();
                 });
     }
 

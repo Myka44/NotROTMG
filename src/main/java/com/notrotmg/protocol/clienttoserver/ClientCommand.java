@@ -10,7 +10,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = AttackInput.class, name = "attack-input"),
         @JsonSubTypes.Type(value = EquipItemCommand.class, name = "equip-item"),
         @JsonSubTypes.Type(value = UnequipItemCommand.class, name = "unequip-item"),
-        @JsonSubTypes.Type(value = DropItemCommand.class, name = "drop-item")
+        @JsonSubTypes.Type(value = DropItemCommand.class, name = "drop-item"),
+        @JsonSubTypes.Type(value = SpawnEnemyRequest.class, name = "spawn-enemy"),
+        @JsonSubTypes.Type(value = UndoCommand.class, name = "undo")
 })
 public interface ClientCommand {
 }

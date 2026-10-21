@@ -51,6 +51,7 @@ public final class AuthoritativeGameWorld {
     private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
     private final SnapshotMapper snapshotMapper;
     private final CommandInvoker commandInvoker = new CommandInvoker();
+    private long nextDebugSpawnId = 1;
 
     public AuthoritativeGameWorld() {
         this(new SnapshotMapper());
@@ -58,8 +59,14 @@ public final class AuthoritativeGameWorld {
 
     public AuthoritativeGameWorld(SnapshotMapper snapshotMapper) {
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
-        commandInvoker.execute(spawnCommand(EnemyType.REGULAR, "slime-1", new Position(220, 170)));
-        commandInvoker.execute(spawnCommand(EnemyType.BOSS, "boss-1", new Position(400, 260)));
+        commandInvoker.execute(new SpawnEnemyCommand(
+                this,
+                EnemyFactory.create(EnemyType.REGULAR, "slime-1", new Position(220, 170))
+        ));
+        commandInvoker.execute(new SpawnEnemyCommand(
+                this,
+                EnemyFactory.create(EnemyType.BOSS, "boss-1", new Position(400, 260))
+        ));
     }
 
     public synchronized GameSnapshot addPlayer(String playerId) {
@@ -161,6 +168,19 @@ public final class AuthoritativeGameWorld {
         return enemies.remove(enemyId) != null;
     }
 
+    /** Runs a command through the invoker so it can be undone later. */
+    public synchronized void executeCommand(GameCommand command) {
+        commandInvoker.execute(Objects.requireNonNull(command));
+    }
+
+    /** Spawns a debug enemy through a command so it can be undone with Ctrl+Z. */
+    public synchronized void spawnEnemy(EnemyType type, Position position) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(position);
+        String enemyId = "debug-" + nextDebugSpawnId++;
+        executeCommand(new SpawnEnemyCommand(this, EnemyFactory.create(type, enemyId, position)));
+    }
+
     /** Undoes the most recent command run through the invoker. */
     public synchronized boolean undoLastCommand() {
         return commandInvoker.undo();
@@ -169,14 +189,6 @@ public final class AuthoritativeGameWorld {
     /** Re-applies the most recently undone command. */
     public synchronized boolean redoLastCommand() {
         return commandInvoker.redo();
-    }
-
-    private GameCommand spawnCommand(EnemyType type, String enemyId, Position position) {
-        Enemy enemy = EnemyFactory.create(type, enemyId, position);
-        return GameCommand.of(
-                () -> spawn(enemy),
-                () -> despawn(enemy.id())
-        );
     }
 
     public synchronized GameSnapshot snapshot() {

@@ -2,7 +2,6 @@ package com.notrotmg.client;
 
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.protocol.GameProtocol;
-import com.notrotmg.protocol.servertoclient.ServerMessage;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -26,6 +25,7 @@ public final class GameClientApplication extends Application implements GameClie
 
         Label instructions = new Label(
                 "Move: WASD / arrow keys     Shoot: hold left mouse button"
+                        + "     Spawn: Ctrl+E     Undo: Ctrl+Z"
         );
         instructions.getStyleClass().add("instructions-label");
 
@@ -49,22 +49,18 @@ public final class GameClientApplication extends Application implements GameClie
                 "Missing client stylesheet: game.css"
         ).toExternalForm());
 
-        session.addListener(this);
-        new InputController(session).attach(scene, stage, canvas);
-
         stage.setTitle("NotROTMG local client");
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();
 
         statusLabel.setText("Connecting to " + GameProtocol.LOCAL_SERVER_URI + " ...");
-        session.connect();
+        session.start(scene, stage, this);
     }
 
     @Override
     public void stop() {
         if (session != null) {
-            session.removeListener(this);
             session.close();
         }
     }
@@ -72,11 +68,6 @@ public final class GameClientApplication extends Application implements GameClie
     @Override
     public void onConnected() {
         Platform.runLater(() -> statusLabel.setText("Connected"));
-    }
-
-    @Override
-    public void onMessage(ServerMessage message) {
-        Platform.runLater(() -> session.handleServerMessage(message));
     }
 
     @Override
