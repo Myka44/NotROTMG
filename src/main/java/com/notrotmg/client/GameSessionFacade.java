@@ -4,13 +4,18 @@ import com.notrotmg.common.json.JacksonJsonCodec;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
+import com.notrotmg.protocol.clienttoserver.ClientCommand;
 import com.notrotmg.protocol.clienttoserver.DropItemCommand;
 import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
+import com.notrotmg.protocol.clienttoserver.SpawnEnemyRequest;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
+import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.stage.Stage;
 
 import java.net.URI;
 import java.util.List;
@@ -19,9 +24,10 @@ import java.util.Objects;
 /**
  * Facade over the client-side subsystems.
  *
- * <p>It presents one simple interface for connecting, sending player actions and
- * routing server messages, instead of making every caller wire the transport,
- * assets, rendering and inventory view together.</p>
+ * <p>{@link #start(Scene, Stage, GameClientListener)} is the single high-level
+ * operation: it renders the first frame, attaches input, routes server messages
+ * and opens the connection by calling the smaller facade operations in order.
+ * Clients no longer wire those steps themselves.</p>
  *
  * <p><b>Clients</b>: {@link GameClientApplication}, {@link InputController}.<br>
  * <b>Subsystems</b>: {@link GameClient}, {@link JacksonJsonCodec},
@@ -30,14 +36,16 @@ import java.util.Objects;
  */
 public final class GameSessionFacade {
     private final Canvas canvas;
+    private final CanvasGameRenderer renderer;
     private final InventoryPane inventoryPane;
     private final ClientMessageHandler messageHandler;
     private final GameClient gameClient;
+    private GameClientListener routingListener;
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
         this.canvas = Objects.requireNonNull(canvas);
         SpriteCatalog spriteCatalog = new SpriteCatalog();
-        CanvasGameRenderer renderer = new CanvasGameRenderer(canvas, spriteCatalog);
+        this.renderer = new CanvasGameRenderer(canvas, spriteCatalog);
         this.inventoryPane = new InventoryPane(
                 spriteCatalog,
                 this::equipItem,
@@ -46,12 +54,22 @@ public final class GameSessionFacade {
         );
         this.messageHandler = new ClientMessageHandler(renderer, inventoryPane);
         this.gameClient = new GameClient(serverUri, new JacksonJsonCodec());
-        renderer.render(emptySnapshot());
     }
 
-    /** The shared game canvas, already wired to the renderer subsystem. */
-    public Canvas canvas() {
-        return canvas;
+    /**
+     * Starts the client session. This is the facade's coarse-grained entry point:
+     * it orchestrates the smaller facade operations instead of making the client
+     * call each subsystem itself.
+     */
+    public void start(Scene scene, Stage stage, GameClientListener statusListener) {
+        Objects.requireNonNull(scene);
+        Objects.requireNonNull(stage);
+        Objects.requireNonNull(statusListener);
+
+        renderInitialFrame();
+        attachInput(scene, stage);
+        routeServerMessages(statusListener);
+        connect();
     }
 
     /** The inventory/equipment view, already wired to this session's transport. */
@@ -59,45 +77,81 @@ public final class GameSessionFacade {
         return inventoryPane;
     }
 
-    public void addListener(GameClientListener listener) {
-        gameClient.addListener(listener);
-    }
-
-    public void removeListener(GameClientListener listener) {
-        gameClient.removeListener(listener);
-    }
-
     public void connect() {
         gameClient.connect();
     }
 
     public void close() {
+        if (routingListener != null) {
+            gameClient.removeListener(routingListener);
+            routingListener = null;
+        }
         gameClient.close();
     }
 
-    /** Routes a decoded server message to the view subsystem that owns it. */
-    public void handleServerMessage(ServerMessage message) {
-        messageHandler.handle(message);
-    }
-
     public void move(int horizontal, int vertical) {
-        gameClient.send(new PlayerInput(horizontal, vertical));
+        send(new PlayerInput(horizontal, vertical));
     }
 
     public void attack(double targetX, double targetY, boolean firing) {
-        gameClient.send(new AttackInput(targetX, targetY, firing));
+        send(new AttackInput(targetX, targetY, firing));
     }
 
     public void equipItem(int inventorySlot) {
-        gameClient.send(new EquipItemCommand(inventorySlot));
+        send(new EquipItemCommand(inventorySlot));
     }
 
     public void unequipItem(EquipmentSlot equipmentSlot) {
-        gameClient.send(new UnequipItemCommand(equipmentSlot));
+        send(new UnequipItemCommand(equipmentSlot));
     }
 
     public void dropItem(int inventorySlot) {
-        gameClient.send(new DropItemCommand(inventorySlot));
+        send(new DropItemCommand(inventorySlot));
+    }
+
+    public void spawnEnemy(double x, double y) {
+        send(new SpawnEnemyRequest(x, y));
+    }
+
+    public void undo() {
+        send(new UndoCommand());
+    }
+
+    private void send(ClientCommand command) {
+        gameClient.send(command);
+    }
+
+    private void renderInitialFrame() {
+        renderer.render(emptySnapshot());
+    }
+
+    private void attachInput(Scene scene, Stage stage) {
+        new InputController(this).attach(scene, stage, canvas);
+    }
+
+    private void routeServerMessages(GameClientListener statusListener) {
+        routingListener = new GameClientListener() {
+            @Override
+            public void onConnected() {
+                statusListener.onConnected();
+            }
+
+            @Override
+            public void onMessage(ServerMessage message) {
+                messageHandler.handle(message);
+            }
+
+            @Override
+            public void onDisconnected(int statusCode, String reason) {
+                statusListener.onDisconnected(statusCode, reason);
+            }
+
+            @Override
+            public void onError(String message) {
+                statusListener.onError(message);
+            }
+        };
+        gameClient.addListener(routingListener);
     }
 
     private static GameSnapshot emptySnapshot() {
