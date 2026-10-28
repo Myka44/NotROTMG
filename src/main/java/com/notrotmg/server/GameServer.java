@@ -13,6 +13,7 @@ import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.clienttoserver.SpawnEnemyRequest;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
 import com.notrotmg.protocol.clienttoserver.UndoCommand;
+import com.notrotmg.protocol.servertoclient.CombatEvents;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import io.javalin.Javalin;
@@ -189,7 +190,13 @@ public final class GameServer implements AutoCloseable {
 
     private void tick() {
         GameSnapshot snapshot = world.tick();
+        CombatEvents events = new CombatEvents(world.drainCombatEvents());
         publishSnapshot(snapshot, false);
+        if (!events.events().isEmpty()) {
+            for (WsContext connection : clients.connections()) {
+                sendMessage(connection, events);
+            }
+        }
     }
 
     private void publishCurrentSnapshot(boolean force) {

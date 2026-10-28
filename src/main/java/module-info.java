@@ -1,5 +1,6 @@
 module com.notrotmg.game {
     requires javafx.controls;
+    requires javafx.media;
     requires java.net.http;
     requires io.javalin;
     requires com.fasterxml.jackson.annotation;

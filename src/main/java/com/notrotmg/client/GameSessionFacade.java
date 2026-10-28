@@ -13,6 +13,7 @@ import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
 import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
+import com.notrotmg.protocol.servertoclient.Snapshot;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.stage.Stage;
@@ -40,6 +41,8 @@ public final class GameSessionFacade {
     private final InventoryPane inventoryPane;
     private final ClientMessageHandler messageHandler;
     private final GameClient gameClient;
+    private final AudioAdapter audio;
+    private final GameSoundListener soundListener;
     private GameClientListener routingListener;
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
@@ -54,6 +57,9 @@ public final class GameSessionFacade {
         );
         this.messageHandler = new ClientMessageHandler(renderer, inventoryPane);
         this.gameClient = new GameClient(serverUri, new JacksonJsonCodec());
+        this.audio = new AudioAdapter();
+        this.soundListener = new GameSoundListener(audio);
+        this.gameClient.addListener(soundListener);
     }
 
     /**
@@ -82,11 +88,13 @@ public final class GameSessionFacade {
     }
 
     public void close() {
+        gameClient.removeListener(soundListener);
         if (routingListener != null) {
             gameClient.removeListener(routingListener);
             routingListener = null;
         }
         gameClient.close();
+        audio.close();
     }
 
     public void move(int horizontal, int vertical) {
@@ -142,7 +150,9 @@ public final class GameSessionFacade {
 
             @Override
             public void onMessage(ServerMessage message) {
-                messageHandler.handle(message);
+                if (message instanceof Snapshot) {
+                    messageHandler.handle(message);
+                }
             }
 
             @Override
