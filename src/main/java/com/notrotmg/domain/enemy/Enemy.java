@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public abstract class Enemy extends Entity implements EnemyPrototype {
+public abstract class Enemy extends Entity {
     private final String name;
     private final EnemyType type;
     private final ProjectileSpec projectileSpec;
@@ -130,6 +130,4 @@ public abstract class Enemy extends Entity implements EnemyPrototype {
         return attackCooldownSeconds;
     }
 
-    @Override
-    public abstract Enemy copy(String id, Position position);
 }

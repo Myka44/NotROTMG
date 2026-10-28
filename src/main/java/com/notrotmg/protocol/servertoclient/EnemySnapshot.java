@@ -1,6 +1,9 @@
 package com.notrotmg.protocol.servertoclient;
 
 import com.notrotmg.domain.enemy.EnemyType;
+import com.notrotmg.domain.enemy.RegularEnemyAccessory;
+
+import java.util.List;
 
 /** Public render state for one server-owned enemy. */
 public record EnemySnapshot(
@@ -10,6 +13,10 @@ public record EnemySnapshot(
         int y,
         int size,
         int currentHealth,
-        int maxHealth
+        int maxHealth,
+                List<RegularEnemyAccessory> accessories
 ) {
+        public EnemySnapshot {
+                accessories = List.copyOf(accessories);
+        }
 }

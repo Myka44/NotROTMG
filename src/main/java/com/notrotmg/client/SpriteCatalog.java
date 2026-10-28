@@ -3,6 +3,7 @@ package com.notrotmg.client;
 import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.item.ItemType;
 import com.notrotmg.domain.enemy.EnemyType;
+import com.notrotmg.domain.enemy.RegularEnemyAccessory;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
@@ -26,6 +27,8 @@ public final class SpriteCatalog {
     private final Map<ItemType, Image> itemSprites = new EnumMap<>(ItemType.class);
     private final Map<CharacterClass, Image> playerSprites = new EnumMap<>(CharacterClass.class);
     private final Map<EnemyType, Image> enemySprites = new EnumMap<>(EnemyType.class);
+        private final Map<RegularEnemyAccessory, Image> enemyAccessorySprites =
+            new EnumMap<>(RegularEnemyAccessory.class);
 
 
     public SpriteCatalog() {
@@ -36,8 +39,12 @@ public final class SpriteCatalog {
         playerSprites.put(CharacterClass.WIZARD, crop(atlas, pixels, 49, 76));
         playerSprites.put(CharacterClass.ARCHER, crop(atlas, pixels, 47, 77));
 
-        enemySprites.put(EnemyType.REGULAR, crop(atlas, pixels, 0, 94));
+        enemySprites.put(EnemyType.REGULAR, crop(atlas, pixels, 61, 79));
         enemySprites.put(EnemyType.BOSS, crop(atlas, pixels, 1, 94));
+
+        enemyAccessorySprites.put(RegularEnemyAccessory.ARMOR, cropCell(atlas, pixels, 57, 82));
+        enemyAccessorySprites.put(RegularEnemyAccessory.SWORD, cropCell(atlas, pixels, 8, 87));
+        enemyAccessorySprites.put(RegularEnemyAccessory.BOOTS, cropCell(atlas, pixels, 57, 83));
 
         /* 
         itemSprites.put(ItemType.SWORD, crop(atlas, pixels, 0, 1));
@@ -77,6 +84,14 @@ public final class SpriteCatalog {
         return sprite;
     }
 
+    public Image enemyAccessorySprite(RegularEnemyAccessory accessory) {
+        Image sprite = enemyAccessorySprites.get(Objects.requireNonNull(accessory));
+        if (sprite == null) {
+            throw new IllegalArgumentException("No sprite registered for enemy accessory: " + accessory);
+        }
+        return sprite;
+    }
+
     private Image loadSpriteSheet() {
         URL resource = Objects.requireNonNull(
                 getClass().getResource(SPRITE_SHEET),
@@ -95,18 +110,26 @@ public final class SpriteCatalog {
             int column,
             int row
     ) {
+        return extractDominantSprite(cropCell(atlas, pixels, column, row));
+        }
+
+        private static Image cropCell(
+            Image atlas,
+            PixelReader pixels,
+            int column,
+            int row
+        ) {
         int x = boundary(column, (int) atlas.getWidth(), ATLAS_COLUMNS);
         int y = boundary(row, (int) atlas.getHeight(), ATLAS_ROWS);
         int nextX = boundary(column + 1, (int) atlas.getWidth(), ATLAS_COLUMNS);
         int nextY = boundary(row + 1, (int) atlas.getHeight(), ATLAS_ROWS);
-        Image cell = new WritableImage(
+        return new WritableImage(
                 pixels,
                 x,
                 y,
                 nextX - x,
                 nextY - y
         );
-        return extractDominantSprite(cell);
     }
 
     private static int boundary(int index, int imageSize, int cellCount) {

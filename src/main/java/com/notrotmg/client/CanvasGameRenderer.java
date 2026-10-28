@@ -44,13 +44,11 @@ public final class CanvasGameRenderer {
         double y = enemy.y();
         double size = enemy.size();
 
-        graphics.drawImage(
-                spriteCatalog.enemySprite(enemy.type()),
-                x,
-                y,
-                enemy.size(),
-                enemy.size()
-        );
+        graphics.setImageSmoothing(false);
+        graphics.drawImage(spriteCatalog.enemySprite(enemy.type()), x, y, size, size);
+        for (var accessory : enemy.accessories()) {
+            graphics.drawImage(spriteCatalog.enemyAccessorySprite(accessory), x, y, size, size);
+        }
 
         
         drawHealthBar(graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), canvasHeight);

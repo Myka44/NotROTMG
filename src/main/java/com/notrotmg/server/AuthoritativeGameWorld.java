@@ -1,5 +1,12 @@
 package com.notrotmg.server;
 
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.Entity;
 import com.notrotmg.domain.GameRules;
@@ -21,13 +28,6 @@ import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
-
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 /** Application service that owns and updates all authoritative domain entities. */
 public final class AuthoritativeGameWorld {
@@ -52,6 +52,8 @@ public final class AuthoritativeGameWorld {
     private final SnapshotMapper snapshotMapper;
     private final CommandInvoker commandInvoker = new CommandInvoker();
     private long nextDebugSpawnId = 1;
+    private int enemySpawnInterval = 5;
+    private double currentEnemySpawnInterval = 0;
 
     public AuthoritativeGameWorld() {
         this(new SnapshotMapper());
@@ -151,6 +153,16 @@ public final class AuthoritativeGameWorld {
             }
         }
         enemies.values().removeIf(enemy -> !enemy.isAlive());
+
+        currentEnemySpawnInterval += GameRules.FIXED_DELTA_SECONDS;
+        if(currentEnemySpawnInterval >= enemySpawnInterval) {
+            currentEnemySpawnInterval = 0;
+            commandInvoker.execute(new SpawnEnemyCommand(
+                this,
+                EnemyFactory.create(EnemyType.REGULAR, "slime-2", new Position(220, 170))
+            ));
+        }
+
         return snapshot();
     }
 

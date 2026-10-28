@@ -8,6 +8,8 @@ import com.notrotmg.domain.projectile.ProjectileBuilder;
 import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SingleShotStrategy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 public final class RegularEnemy extends Enemy {
@@ -28,6 +30,7 @@ public final class RegularEnemy extends Enemy {
     private static final double STOP_DISTANCE = 110;
     private static final double ATTACK_RANGE = 240;
     private static final double ATTACK_COOLDOWN_SECONDS = 1.2;
+        private final List<RegularEnemyAccessory> accessories;
 
     public RegularEnemy(String id, Position position) {
         super(
@@ -44,7 +47,67 @@ public final class RegularEnemy extends Enemy {
                 ATTACK_RANGE,
                 ATTACK_COOLDOWN_SECONDS
         );
+        this.accessories = List.of();
     }
+
+    public RegularEnemy withStats(EntityStats stats) {
+        return new RegularEnemy(
+                id(),
+                position(),
+                name(),
+                size(),
+                stats,
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds(),
+                accessories
+        );
+    }
+
+    public RegularEnemy withAccessory(RegularEnemyAccessory accessory) {
+        List<RegularEnemyAccessory> updatedAccessories = new ArrayList<>(accessories);
+        if (!updatedAccessories.contains(accessory)) {
+            updatedAccessories.add(accessory);
+        }
+        return new RegularEnemy(
+                id(),
+                position(),
+                name(),
+                size(),
+                stats(),
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds(),
+                updatedAccessories
+        );
+    }
+
+    public RegularEnemy withAttackStrategy(AttackStrategy attackStrategy) {
+        return new RegularEnemy(
+                id(),
+                position(),
+                name(),
+                size(),
+                stats(),
+                projectileSpec(),
+                attackStrategy,
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                                attackCooldownSeconds(),
+                                accessories
+        );
+    }
+
+        public List<RegularEnemyAccessory> accessories() {
+                return accessories;
+        }
 
     private RegularEnemy(
             String id,
@@ -57,7 +120,8 @@ public final class RegularEnemy extends Enemy {
             Supplier<ProjectileBuilder> projectileBuilderFactory,
             double stopDistance,
             double attackRange,
-            double attackCooldownSeconds
+            double attackCooldownSeconds,
+            List<RegularEnemyAccessory> accessories
     ) {
         super(
                 id,
@@ -73,22 +137,7 @@ public final class RegularEnemy extends Enemy {
                 attackRange,
                 attackCooldownSeconds
         );
+        this.accessories = List.copyOf(accessories);
     }
 
-    @Override
-    public Enemy copy(String id, Position position) {
-        return new RegularEnemy(
-                id,
-                position,
-                name(),
-                size(),
-                stats(),
-                projectileSpec(),
-                attackStrategy(),
-                projectileBuilderFactory(),
-                stopDistance(),
-                attackRange(),
-                attackCooldownSeconds()
-        );
-    }
 }

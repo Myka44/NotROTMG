@@ -46,49 +46,4 @@ public final class BossEnemy extends Enemy {
         );
     }
 
-    private BossEnemy(
-            String id,
-            Position position,
-            String name,
-            double size,
-            EntityStats stats,
-            ProjectileSpec projectileSpec,
-            AttackStrategy attackStrategy,
-            Supplier<ProjectileBuilder> projectileBuilderFactory,
-            double stopDistance,
-            double attackRange,
-            double attackCooldownSeconds
-    ) {
-        super(
-                id,
-                name,
-                EnemyType.BOSS,
-                position,
-                size,
-                stats,
-                projectileSpec,
-                attackStrategy,
-                projectileBuilderFactory,
-                stopDistance,
-                attackRange,
-                attackCooldownSeconds
-        );
-    }
-
-    @Override
-    public Enemy copy(String id, Position position) {
-        return new BossEnemy(
-                id,
-                position,
-                name(),
-                size(),
-                stats(),
-                projectileSpec(),
-                attackStrategy(),
-                projectileBuilderFactory(),
-                stopDistance(),
-                attackRange(),
-                attackCooldownSeconds()
-        );
-    }
 }
