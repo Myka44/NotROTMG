@@ -33,7 +33,7 @@ class GameSoundListenerTest {
                 SoundEffect.BOW_SHOT,
                 SoundEffect.MAGIC_SHOT,
                 SoundEffect.ENEMY_SHOT,
-                SoundEffect.HIT,
+                SoundEffect.ENEMY_HIT,
                 SoundEffect.PLAYER_HIT
         ), played);
     }

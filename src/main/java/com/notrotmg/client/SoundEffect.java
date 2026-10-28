@@ -5,7 +5,7 @@ public enum SoundEffect {
     BOW_SHOT("bow-shot.wav"),
     MAGIC_SHOT("magic-shot.wav"),
     ENEMY_SHOT("enemy-shot.wav"),
-    HIT("hit.wav"),
+    ENEMY_HIT("hit.wav"),
     PLAYER_HIT("player-hit.mp3");
 
     private final String fileName;

@@ -24,7 +24,7 @@ public final class GameSoundListener implements GameClientListener {
                 case PLAYER_SHOT -> playerShotSound(event.spriteId());
                 case ENEMY_SHOT -> SoundEffect.ENEMY_SHOT;
                 case PLAYER_HIT -> SoundEffect.PLAYER_HIT;
-                case ENEMY_HIT -> SoundEffect.HIT;
+                case ENEMY_HIT -> SoundEffect.ENEMY_HIT;
             };
             if (effect != null) {
                 audio.play(effect);

@@ -3,9 +3,6 @@ package com.notrotmg.client;
 import com.notrotmg.common.logging.GameLogger;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.Vector2;
-import javafx.animation.AnimationTimer;
-import javafx.beans.value.ChangeListener;
-import javafx.stage.Stage;
 
 import java.util.Objects;
 
@@ -19,9 +16,6 @@ public final class GameControls implements AutoCloseable {
     private Vector2 previousMovement;
     private Position previousTarget;
     private boolean previouslyFiring;
-    private AnimationTimer timer;
-    private Stage stage;
-    private ChangeListener<Boolean> focusChanged;
 
     public GameControls(GameSessionFacade session, ControllerInput input) {
         this(session, input, input);
@@ -32,28 +26,6 @@ public final class GameControls implements AutoCloseable {
         this.preferredInput = Objects.requireNonNull(preferredInput);
         this.fallbackInput = Objects.requireNonNull(fallbackInput);
         this.input = fallbackInput;
-    }
-
-    public void start(Stage stage) {
-        if (timer != null) {
-            throw new IllegalStateException("Controls are already started");
-        }
-        this.stage = Objects.requireNonNull(stage);
-        focusChanged = (observable, oldValue, focused) -> {
-            if (!focused) {
-                stop();
-            }
-        };
-        stage.focusedProperty().addListener(focusChanged);
-        timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (stage.isFocused()) {
-                    update();
-                }
-            }
-        };
-        timer.start();
     }
 
     public void update() {
@@ -67,8 +39,6 @@ public final class GameControls implements AutoCloseable {
         if (input != preferredInput) {
             input.poll();
         }
-        move();
-        shoot();
     }
 
     public void move() {
@@ -106,10 +76,6 @@ public final class GameControls implements AutoCloseable {
 
     @Override
     public void close() {
-        if (timer != null) {
-            timer.stop();
-            stage.focusedProperty().removeListener(focusChanged);
-        }
         stop();
         preferredInput.close();
         if (fallbackInput != preferredInput) {

@@ -15,6 +15,8 @@ import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import com.notrotmg.protocol.servertoclient.Snapshot;
+import javafx.animation.AnimationTimer;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.Scene;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
@@ -47,6 +49,9 @@ public final class GameSessionFacade {
     private final GameSoundListener soundListener;
     private GameClientListener routingListener;
     private GameControls controls;
+    private AnimationTimer controlsTimer;
+    private Stage controlsStage;
+    private ChangeListener<Boolean> focusChanged;
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
         this.canvas = Objects.requireNonNull(canvas);
@@ -71,13 +76,16 @@ public final class GameSessionFacade {
      * call each subsystem itself.
      */
     public void start(Scene scene, Stage stage, GameClientListener statusListener, GameControls controls) {
+        if (controlsTimer != null) {
+            throw new IllegalStateException("Controls are already started");
+        }
         Objects.requireNonNull(scene);
         Objects.requireNonNull(stage);
         Objects.requireNonNull(statusListener);
         this.controls = Objects.requireNonNull(controls);
 
         renderInitialFrame();
-        controls.start(stage);
+        startControls(stage);
         routeServerMessages(statusListener);
         connect();
     }
@@ -92,6 +100,10 @@ public final class GameSessionFacade {
     }
 
     public void close() {
+        if (controlsTimer != null) {
+            controlsTimer.stop();
+            controlsStage.focusedProperty().removeListener(focusChanged);
+        }
         if (controls != null) {
             controls.close();
         }
@@ -150,6 +162,27 @@ public final class GameSessionFacade {
 
     private void renderInitialFrame() {
         renderer.render(emptySnapshot());
+    }
+
+    private void startControls(Stage stage) {
+        controlsStage = stage;
+        focusChanged = (observable, oldValue, focused) -> {
+            if (!focused) {
+                controls.stop();
+            }
+        };
+        stage.focusedProperty().addListener(focusChanged);
+        controlsTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (stage.isFocused()) {
+                    controls.update();
+                    controls.move();
+                    controls.shoot();
+                }
+            }
+        };
+        controlsTimer.start();
     }
 
     private void routeServerMessages(GameClientListener statusListener) {
