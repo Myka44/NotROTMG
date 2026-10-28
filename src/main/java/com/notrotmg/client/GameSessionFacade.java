@@ -40,6 +40,7 @@ public final class GameSessionFacade {
     private final InventoryPane inventoryPane;
     private final ClientMessageHandler messageHandler;
     private final GameClient gameClient;
+    private InputController inputController;
     private GameClientListener routingListener;
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
@@ -130,7 +131,8 @@ public final class GameSessionFacade {
     }
 
     private void attachInput(Scene scene, Stage stage) {
-        new InputController(this).attach(scene, stage, canvas);
+        inputController = new InputController(this);
+        inputController.attach(scene, stage, canvas);
     }
 
     private void routeServerMessages(GameClientListener statusListener) {
@@ -143,6 +145,9 @@ public final class GameSessionFacade {
             @Override
             public void onMessage(ServerMessage message) {
                 messageHandler.handle(message);
+                if (message instanceof GameSnapshot) {
+                    inputController.refreshAttackInput();
+                }
             }
 
             @Override

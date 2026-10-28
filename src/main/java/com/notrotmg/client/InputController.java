@@ -15,9 +15,9 @@ import java.util.Set;
 public final class InputController {
     private final GameSessionFacade session;
     private final Set<KeyCode> pressedMovementKeys = EnumSet.noneOf(KeyCode.class);
-    private double attackTargetX;
-    private double attackTargetY;
-    private boolean firing;
+    private volatile double attackTargetX;
+    private volatile double attackTargetY;
+    private volatile boolean firing;
 
     public InputController(GameSessionFacade session) {
         this.session = Objects.requireNonNull(session);
@@ -63,7 +63,12 @@ public final class InputController {
                 event.consume();
             }
         });
-        canvas.setOnMouseMoved(this::updateAttackTarget);
+        canvas.setOnMouseMoved(event -> {
+            updateAttackTarget(event);
+            if (firing) {
+                publishAttackInput();
+            }
+        });
         canvas.setOnMouseDragged(event -> {
             if (firing) {
                 updateAttackTarget(event);
@@ -106,6 +111,12 @@ public final class InputController {
 
     private void publishAttackInput() {
         session.attack(attackTargetX, attackTargetY, firing);
+    }
+
+    public void refreshAttackInput() {
+        if (firing) {
+            publishAttackInput();
+        }
     }
 
     private boolean isPressed(KeyCode first, KeyCode second) {
