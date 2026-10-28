@@ -1,6 +1,7 @@
 package com.notrotmg.client;
 
 import com.notrotmg.domain.GameRules;
+import com.notrotmg.domain.Position;
 import com.notrotmg.protocol.GameProtocol;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -8,6 +9,8 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -55,7 +58,19 @@ public final class GameClientApplication extends Application implements GameClie
         stage.show();
 
         statusLabel.setText("Connecting to " + GameProtocol.LOCAL_SERVER_URI + " ...");
-        session.start(scene, stage, this);
+        KeyboardMouseInput keyboard = new KeyboardMouseInput(scene, stage, canvas);
+        GameControls controls = new GameControls(session, new DualSenseInput(), keyboard);
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.isControlDown() && event.getCode() == KeyCode.Z) {
+                session.undo();
+                event.consume();
+            } else if (event.isControlDown() && event.getCode() == KeyCode.E) {
+                Position target = keyboard.aimTarget(session.playerScreenPosition());
+                session.spawnEnemy(target.x(), target.y());
+                event.consume();
+            }
+        });
+        session.start(scene, stage, this, controls);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.notrotmg.client;
 
 import com.notrotmg.common.json.JacksonJsonCodec;
 import com.notrotmg.domain.GameRules;
+import com.notrotmg.domain.Position;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
@@ -15,6 +16,7 @@ import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import com.notrotmg.protocol.servertoclient.Snapshot;
 import javafx.scene.Scene;
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.stage.Stage;
 
@@ -25,12 +27,12 @@ import java.util.Objects;
 /**
  * Facade over the client-side subsystems.
  *
- * <p>{@link #start(Scene, Stage, GameClientListener)} is the single high-level
+ * <p>{@link #start(Scene, Stage, GameClientListener, GameControls)} is the single high-level
  * operation: it renders the first frame, attaches input, routes server messages
  * and opens the connection by calling the smaller facade operations in order.
  * Clients no longer wire those steps themselves.</p>
  *
- * <p><b>Clients</b>: {@link GameClientApplication}, {@link InputController}.<br>
+ * <p><b>Clients</b>: {@link GameClientApplication}, {@link GameControls}.<br>
  * <b>Subsystems</b>: {@link GameClient}, {@link JacksonJsonCodec},
  * {@link SpriteCatalog}, {@link CanvasGameRenderer}, {@link InventoryPane},
  * {@link ClientMessageHandler}.</p>
@@ -44,6 +46,7 @@ public final class GameSessionFacade {
     private final AudioAdapter audio;
     private final GameSoundListener soundListener;
     private GameClientListener routingListener;
+    private GameControls controls;
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
         this.canvas = Objects.requireNonNull(canvas);
@@ -67,13 +70,14 @@ public final class GameSessionFacade {
      * it orchestrates the smaller facade operations instead of making the client
      * call each subsystem itself.
      */
-    public void start(Scene scene, Stage stage, GameClientListener statusListener) {
+    public void start(Scene scene, Stage stage, GameClientListener statusListener, GameControls controls) {
         Objects.requireNonNull(scene);
         Objects.requireNonNull(stage);
         Objects.requireNonNull(statusListener);
+        this.controls = Objects.requireNonNull(controls);
 
         renderInitialFrame();
-        attachInput(scene, stage);
+        controls.start(stage);
         routeServerMessages(statusListener);
         connect();
     }
@@ -88,6 +92,9 @@ public final class GameSessionFacade {
     }
 
     public void close() {
+        if (controls != null) {
+            controls.close();
+        }
         gameClient.removeListener(soundListener);
         if (routingListener != null) {
             gameClient.removeListener(routingListener);
@@ -111,6 +118,14 @@ public final class GameSessionFacade {
 
     public void equipItem(int inventorySlot) {
         send(new EquipItemCommand(inventorySlot));
+    }
+
+    public Position playerScreenPosition() {
+        return renderer.playerScreenPosition();
+    }
+
+    public void aimTarget(Position target) {
+        renderer.aimTarget(target);
     }
 
     public void unequipItem(EquipmentSlot equipmentSlot) {
@@ -137,21 +152,18 @@ public final class GameSessionFacade {
         renderer.render(emptySnapshot());
     }
 
-    private void attachInput(Scene scene, Stage stage) {
-        new InputController(this).attach(scene, stage, canvas);
-    }
-
     private void routeServerMessages(GameClientListener statusListener) {
         routingListener = new GameClientListener() {
             @Override
             public void onConnected() {
+                Platform.runLater(() -> controls.stop());
                 statusListener.onConnected();
             }
 
             @Override
             public void onMessage(ServerMessage message) {
                 if (message instanceof Snapshot) {
-                    messageHandler.handle(message);
+                    Platform.runLater(() -> messageHandler.handle(message));
                 }
             }
 
