@@ -43,20 +43,16 @@ public final class CanvasGameRenderer {
         double x = enemy.x();
         double y = enemy.y();
         double size = enemy.size();
-        Color body = switch (enemy.type()) {
-            case REGULAR -> Color.web("#65b66c");
-            case BOSS -> Color.web("#8750a7");
-        };
 
-        graphics.setFill(Color.color(0, 0, 0, 0.28));
-        graphics.fillOval(x + size * 0.12, y + size * 0.78, size * 0.8, size * 0.18);
-        graphics.setFill(Color.web("#25232c"));
-        graphics.fillRect(x + 1, y + 1, size - 2, size - 2);
-        graphics.setFill(body);
-        graphics.fillRect(x + 3, y + 3, size - 6, size - 6);
-        graphics.setFill(Color.web("#f6e9d1"));
-        graphics.fillRect(x + size * 0.28, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
-        graphics.fillRect(x + size * 0.60, y + size * 0.36, Math.max(2, size * 0.12), Math.max(2, size * 0.12));
+        graphics.drawImage(
+                spriteCatalog.enemySprite(enemy.type()),
+                x,
+                y,
+                enemy.size(),
+                enemy.size()
+        );
+
+        
         drawHealthBar(graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), canvasHeight);
     }
 

@@ -2,6 +2,7 @@ package com.notrotmg.client;
 
 import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.item.ItemType;
+import com.notrotmg.domain.enemy.EnemyType;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
@@ -17,23 +18,28 @@ import java.util.Objects;
 
 /** Loads one sprite sheet and caches its individual character and item sprites. */
 public final class SpriteCatalog {
-    private static final String SPRITE_SHEET = "/sprites/notrotmg-sprites.png";
-    private static final int ATLAS_COLUMNS = 4;
-    private static final int ATLAS_ROWS = 4;
+    private static final String SPRITE_SHEET = "/sprites/ProjectUtumno_full.png";
+    private static final int ATLAS_COLUMNS = 64;
+    private static final int ATLAS_ROWS = 95;
     private static final int VISIBLE_ALPHA_THRESHOLD = 16;
-    private static final double CONTENT_PADDING_RATIO = 0.06;
 
     private final Map<ItemType, Image> itemSprites = new EnumMap<>(ItemType.class);
     private final Map<CharacterClass, Image> playerSprites = new EnumMap<>(CharacterClass.class);
+    private final Map<EnemyType, Image> enemySprites = new EnumMap<>(EnemyType.class);
+
 
     public SpriteCatalog() {
         Image atlas = loadSpriteSheet();
         PixelReader pixels = Objects.requireNonNull(atlas.getPixelReader(), "Sprite sheet has no pixels");
 
-        playerSprites.put(CharacterClass.WARRIOR, crop(atlas, pixels, 0, 0));
-        playerSprites.put(CharacterClass.WIZARD, crop(atlas, pixels, 1, 0));
-        playerSprites.put(CharacterClass.ARCHER, crop(atlas, pixels, 2, 0));
+        playerSprites.put(CharacterClass.WARRIOR, crop(atlas, pixels, 50, 76));
+        playerSprites.put(CharacterClass.WIZARD, crop(atlas, pixels, 49, 76));
+        playerSprites.put(CharacterClass.ARCHER, crop(atlas, pixels, 47, 77));
 
+        enemySprites.put(EnemyType.REGULAR, crop(atlas, pixels, 0, 94));
+        enemySprites.put(EnemyType.BOSS, crop(atlas, pixels, 1, 94));
+
+        /* 
         itemSprites.put(ItemType.SWORD, crop(atlas, pixels, 0, 1));
         itemSprites.put(ItemType.STAFF, crop(atlas, pixels, 1, 1));
         itemSprites.put(ItemType.BOW, crop(atlas, pixels, 2, 1));
@@ -44,6 +50,7 @@ public final class SpriteCatalog {
         itemSprites.put(ItemType.HELMET, crop(atlas, pixels, 3, 2));
         itemSprites.put(ItemType.RING, crop(atlas, pixels, 0, 3));
         itemSprites.put(ItemType.SPELL, crop(atlas, pixels, 1, 3));
+        */
     }
 
     public Image itemSprite(ItemType itemType) {
@@ -58,6 +65,14 @@ public final class SpriteCatalog {
         Image sprite = playerSprites.get(Objects.requireNonNull(characterClass));
         if (sprite == null) {
             throw new IllegalArgumentException("No sprite registered for character class: " + characterClass);
+        }
+        return sprite;
+    }
+
+    public Image enemySprite(EnemyType enemyType) {
+        Image sprite = enemySprites.get(Objects.requireNonNull(enemyType));
+        if (sprite == null) {
+            throw new IllegalArgumentException("No sprite registered for character class: " + enemyType);
         }
         return sprite;
     }
@@ -155,7 +170,7 @@ public final class SpriteCatalog {
         }
 
         if (dominantComponent.isEmpty()) {
-            throw new IllegalArgumentException("Sprite cell does not contain visible pixels");
+            return new WritableImage(1, 1);
         }
 
         int minX = width;
@@ -166,6 +181,7 @@ public final class SpriteCatalog {
         for (int pixel : dominantComponent) {
             int x = pixel % width;
             int y = pixel / width;
+
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
@@ -174,25 +190,26 @@ public final class SpriteCatalog {
 
         int contentWidth = maxX - minX + 1;
         int contentHeight = maxY - minY + 1;
-        int padding = Math.max(
-                1,
-                (int) Math.round(Math.max(contentWidth, contentHeight) * CONTENT_PADDING_RATIO)
-        );
-        int spriteSize = Math.max(contentWidth, contentHeight) + padding * 2;
+
+        int spriteSize = Math.max(contentWidth, contentHeight);
+
         int destinationX = (spriteSize - contentWidth) / 2;
         int destinationY = (spriteSize - contentHeight) / 2;
 
         WritableImage trimmed = new WritableImage(spriteSize, spriteSize);
         PixelWriter writer = trimmed.getPixelWriter();
+
         for (int pixel : dominantComponent) {
             int sourceX = pixel % width;
             int sourceY = pixel / width;
+
             writer.setArgb(
-                    destinationX + sourceX - minX,
-                    destinationY + sourceY - minY,
-                    pixels.getArgb(sourceX, sourceY)
+                destinationX + sourceX - minX,
+                destinationY + sourceY - minY,
+                pixels.getArgb(sourceX, sourceY)
             );
         }
+
         return trimmed;
     }
 }
