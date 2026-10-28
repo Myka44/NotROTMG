@@ -19,6 +19,8 @@ public final class CanvasGameRenderer {
     private static final Color STONE = Color.web("#71806f");
     private final Canvas canvas;
     private final SpriteCatalog spriteCatalog;
+    private double cameraX;
+    private double cameraY;
 
     public CanvasGameRenderer(Canvas canvas, SpriteCatalog spriteCatalog) {
         this.canvas = Objects.requireNonNull(canvas);
@@ -27,16 +29,52 @@ public final class CanvasGameRenderer {
 
     public void render(GameSnapshot snapshot) {
         GraphicsContext graphics = canvas.getGraphicsContext2D();
-        drawGround(graphics, snapshot.canvasWidth(), snapshot.canvasHeight());
+        updateCamera(snapshot);
+        graphics.save();
+        graphics.beginPath();
+        graphics.rect(0, 0, canvas.getWidth(), canvas.getHeight());
+        graphics.clip();
+        graphics.translate(-cameraX, -cameraY);
+        drawGround(graphics, snapshot.worldWidth(), snapshot.worldHeight());
         for (ProjectileSnapshot projectile : snapshot.projectiles()) {
             drawProjectile(graphics, projectile);
         }
         for (EnemySnapshot enemy : snapshot.enemies()) {
-            drawEnemy(graphics, enemy, snapshot.canvasHeight());
+            drawEnemy(graphics, enemy, (int) canvas.getHeight());
         }
         for (PlayerSnapshot player : snapshot.players()) {
-            drawPlayer(graphics, player, snapshot.canvasHeight());
+            drawPlayer(graphics, player, (int) canvas.getHeight());
         }
+        graphics.restore();
+    }
+
+    public double worldX(double screenX) {
+        return screenX + cameraX;
+    }
+
+    public double worldY(double screenY) {
+        return screenY + cameraY;
+    }
+
+    private void updateCamera(GameSnapshot snapshot) {
+        PlayerSnapshot followedPlayer = snapshot.players().stream()
+                .filter(player -> Objects.equals(player.id(), snapshot.followedPlayerId()))
+                .findFirst()
+                .orElse(null);
+        if (followedPlayer == null) {
+            cameraX = 0;
+            cameraY = 0;
+            return;
+        }
+
+        double centerX = followedPlayer.x() + followedPlayer.size() / 2.0;
+        double centerY = followedPlayer.y() + followedPlayer.size() / 2.0;
+        cameraX = clampCamera(centerX - canvas.getWidth() / 2, snapshot.worldWidth(), canvas.getWidth());
+        cameraY = clampCamera(centerY - canvas.getHeight() / 2, snapshot.worldHeight(), canvas.getHeight());
+    }
+
+    private static double clampCamera(double desiredOffset, double worldSize, double viewportSize) {
+        return Math.max(0, Math.min(worldSize - viewportSize, desiredOffset));
     }
 
     private void drawEnemy(GraphicsContext graphics, EnemySnapshot enemy, int canvasHeight) {
@@ -51,7 +89,16 @@ public final class CanvasGameRenderer {
         }
 
         
-        drawHealthBar(graphics, x, y, size, enemy.currentHealth(), enemy.maxHealth(), canvasHeight);
+        drawHealthBar(
+            graphics,
+            x,
+            y,
+            size,
+            enemy.currentHealth(),
+            enemy.maxHealth(),
+            canvasHeight,
+            cameraY
+        );
     }
 
     private void drawProjectile(GraphicsContext graphics, ProjectileSnapshot projectile) {
@@ -85,8 +132,12 @@ public final class CanvasGameRenderer {
     }
 
     private void drawGround(GraphicsContext graphics, int width, int height) {
-        for (int y = 0; y < height; y += TILE_SIZE) {
-            for (int x = 0; x < width; x += TILE_SIZE) {
+        int firstX = Math.max(0, (int) cameraX / TILE_SIZE * TILE_SIZE);
+        int firstY = Math.max(0, (int) cameraY / TILE_SIZE * TILE_SIZE);
+        int lastX = Math.min(width, (int) Math.ceil((cameraX + canvas.getWidth()) / TILE_SIZE) * TILE_SIZE);
+        int lastY = Math.min(height, (int) Math.ceil((cameraY + canvas.getHeight()) / TILE_SIZE) * TILE_SIZE);
+        for (int y = firstY; y < lastY; y += TILE_SIZE) {
+            for (int x = firstX; x < lastX; x += TILE_SIZE) {
                 int column = x / TILE_SIZE;
                 int row = y / TILE_SIZE;
                 graphics.setFill((column + row) % 2 == 0 ? TILE_A : TILE_B);
@@ -126,7 +177,8 @@ public final class CanvasGameRenderer {
                 player.size(),
                 player.currentHealth(),
                 player.maxHealth(),
-                canvasHeight
+                canvasHeight,
+                cameraY
         );
     }
 
@@ -137,10 +189,11 @@ public final class CanvasGameRenderer {
             double size,
             int currentHealth,
             int maxHealth,
-            int canvasHeight
+            int canvasHeight,
+            double cameraY
     ) {
         double barY = y + size + 3;
-        if (barY + 4 > canvasHeight) {
+        if (barY - cameraY + 4 > canvasHeight) {
             barY = y - 6;
         }
         double healthRatio = maxHealth == 0

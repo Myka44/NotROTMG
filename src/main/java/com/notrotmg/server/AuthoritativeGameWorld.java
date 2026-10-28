@@ -34,17 +34,17 @@ public final class AuthoritativeGameWorld {
     private static final int STARTING_WEAPON_INVENTORY_SLOT = 0;
     private static final int[][] SPAWN_POSITIONS = {
             {64, 64},
-            {GameRules.CANVAS_WIDTH - GameRules.PLAYER_SIZE - 64, 64},
-            {64, GameRules.CANVAS_HEIGHT - GameRules.PLAYER_SIZE - 64},
+            {GameRules.WORLD_WIDTH - GameRules.PLAYER_SIZE - 64, 64},
+            {64, GameRules.WORLD_HEIGHT - GameRules.PLAYER_SIZE - 64},
             {
-                    GameRules.CANVAS_WIDTH - GameRules.PLAYER_SIZE - 64,
-                    GameRules.CANVAS_HEIGHT - GameRules.PLAYER_SIZE - 64
+                GameRules.WORLD_WIDTH - GameRules.PLAYER_SIZE - 64,
+                GameRules.WORLD_HEIGHT - GameRules.PLAYER_SIZE - 64
             }
     };
 
     private final WorldBounds bounds = new WorldBounds(
-            GameRules.CANVAS_WIDTH,
-            GameRules.CANVAS_HEIGHT
+            GameRules.WORLD_WIDTH,
+            GameRules.WORLD_HEIGHT
     );
     private final Map<String, Player> players = new LinkedHashMap<>();
     private final Map<String, Enemy> enemies = new LinkedHashMap<>();

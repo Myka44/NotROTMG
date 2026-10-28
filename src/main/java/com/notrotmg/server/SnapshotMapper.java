@@ -42,11 +42,12 @@ public final class SnapshotMapper {
                 .map(this::projectileSnapshot)
                 .toList();
         return new GameSnapshot(
-                GameRules.CANVAS_WIDTH,
-                GameRules.CANVAS_HEIGHT,
+                GameRules.WORLD_WIDTH,
+                GameRules.WORLD_HEIGHT,
                 playerSnapshots,
                 enemySnapshots,
-                projectileSnapshots
+                projectileSnapshots,
+                null
         );
     }
 

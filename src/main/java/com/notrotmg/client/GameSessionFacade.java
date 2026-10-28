@@ -94,7 +94,11 @@ public final class GameSessionFacade {
     }
 
     public void attack(double targetX, double targetY, boolean firing) {
-        send(new AttackInput(targetX, targetY, firing));
+        send(new AttackInput(
+            renderer.worldX(targetX),
+            renderer.worldY(targetY),
+            firing
+        ));
     }
 
     public void equipItem(int inventorySlot) {
@@ -110,7 +114,7 @@ public final class GameSessionFacade {
     }
 
     public void spawnEnemy(double x, double y) {
-        send(new SpawnEnemyRequest(x, y));
+        send(new SpawnEnemyRequest(renderer.worldX(x), renderer.worldY(y)));
     }
 
     public void undo() {
@@ -156,11 +160,12 @@ public final class GameSessionFacade {
 
     private static GameSnapshot emptySnapshot() {
         return new GameSnapshot(
-                GameRules.CANVAS_WIDTH,
-                GameRules.CANVAS_HEIGHT,
+            GameRules.WORLD_WIDTH,
+            GameRules.WORLD_HEIGHT,
                 List.of(),
                 List.of(),
-                List.of()
+            List.of(),
+            null
         );
     }
 }

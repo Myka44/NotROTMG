@@ -15,7 +15,7 @@ import javafx.stage.Stage;
 import java.util.Objects;
 
 public final class GameClientApplication extends Application implements GameClientListener {
-    private final Canvas canvas = new Canvas(GameRules.CANVAS_WIDTH, GameRules.CANVAS_HEIGHT);
+    private final Canvas canvas = new Canvas(GameRules.VIEWPORT_WIDTH, GameRules.VIEWPORT_HEIGHT);
     private final Label statusLabel = new Label("Disconnected");
     private GameSessionFacade session;
 
