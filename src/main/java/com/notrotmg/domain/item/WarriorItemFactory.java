@@ -1,5 +1,6 @@
 package com.notrotmg.domain.item;
 
+import com.notrotmg.domain.projectile.CrossShotStrategy;
 import com.notrotmg.domain.projectile.KineticProjectileBuilder;
 import com.notrotmg.domain.projectile.ProjectileSpec;
 import com.notrotmg.domain.projectile.SingleShotStrategy;
@@ -11,7 +12,7 @@ public final class WarriorItemFactory implements CharacterItemFactory {
                 "Iron Sword",
                 ItemType.SWORD,
                 new ProjectileSpec("iron-sword-projectile", 18, 420, 8, 0.8),
-                new SingleShotStrategy(),
+                new CrossShotStrategy(),
                 () -> new KineticProjectileBuilder(3),
                 0.35
         );
