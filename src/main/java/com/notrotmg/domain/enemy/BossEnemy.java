@@ -10,7 +10,7 @@ import com.notrotmg.domain.projectile.RadialShotStrategy;
 
 import java.util.function.Supplier;
 
-public final class BossEnemy extends Enemy {
+public final class BossEnemy extends Enemy implements IPrototype<BossEnemy> {
     private static final double SIZE = 64;
     private static final EntityStats STATS = EntityStats.builder()
             .maxHealth(500)
@@ -45,5 +45,10 @@ public final class BossEnemy extends Enemy {
                 ATTACK_COOLDOWN_SECONDS
         );
     }
+
+        @Override
+        public BossEnemy copy() {
+                return new BossEnemy(id(), position());
+        }
 
 }

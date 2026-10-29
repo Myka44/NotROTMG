@@ -1,24 +1,22 @@
 package com.notrotmg.common.logging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import java.util.Objects;
-
-/** Application-wide logger implemented with the Singleton pattern. */
 public final class GameLogger {
-    private static final GameLogger INSTANCE = new GameLogger();
-
-    private final Logger logger = LoggerFactory.getLogger(GameLogger.class);
+    private static final GameLogger instance = new GameLogger();
+    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
 
     private GameLogger() {
     }
 
     public static GameLogger getInstance() {
-        return INSTANCE;
+        return instance;
     }
 
-    public void log(String message) {
-        logger.info(Objects.requireNonNull(message));
+    public synchronized void log(String message) {
+        Date date = new Date();
+        System.out.println(formatter.format(date) + " " + message);
     }
 }

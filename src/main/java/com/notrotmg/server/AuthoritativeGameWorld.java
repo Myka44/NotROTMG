@@ -1,6 +1,7 @@
 package com.notrotmg.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -8,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
+import com.notrotmg.common.logging.GameLogger;
 import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.Entity;
 import com.notrotmg.domain.GameRules;
@@ -55,6 +58,7 @@ public final class AuthoritativeGameWorld {
     private final List<CombatEvent> combatEvents = new ArrayList<>();
     private final SnapshotMapper snapshotMapper;
     private final CommandInvoker commandInvoker = new CommandInvoker();
+    private final GameLogger logger = GameLogger.getInstance();
     private long nextDebugSpawnId = 1;
     private int enemySpawnInterval = 5;
     private double currentEnemySpawnInterval = 0;
@@ -83,13 +87,24 @@ public final class AuthoritativeGameWorld {
                     playerId,
                     spawnSlot,
                     new Position(spawn[0], spawn[1]),
-                    CharacterClass.WARRIOR
+                    _randomClass()
             );
             addStartingItems(player);
             players.put(playerId, player);
         }
         return snapshot();
     }
+
+    private CharacterClass _randomClass() {
+    List<CharacterClass> classes = new ArrayList<>(List.of(
+        CharacterClass.WARRIOR,
+        CharacterClass.ARCHER,
+        CharacterClass.WIZARD
+    ));
+
+    Collections.shuffle(classes, ThreadLocalRandom.current());
+    return classes.get(0);
+}
 
     public synchronized GameSnapshot removePlayer(String playerId) {
         players.remove(playerId);
@@ -181,6 +196,7 @@ public final class AuthoritativeGameWorld {
             return false;
         }
         enemies.put(enemy.id(), enemy);
+        logger.log("Spawning enemy " + enemy.id());
         return true;
     }
 
@@ -189,12 +205,10 @@ public final class AuthoritativeGameWorld {
         return enemies.remove(enemyId) != null;
     }
 
-    /** Runs a command through the invoker so it can be undone later. */
     public synchronized void executeCommand(GameCommand command) {
         commandInvoker.execute(Objects.requireNonNull(command));
     }
 
-    /** Spawns a debug enemy through a command so it can be undone with Ctrl+Z. */
     public synchronized void spawnEnemy(EnemyType type, Position position) {
         Objects.requireNonNull(type);
         Objects.requireNonNull(position);
@@ -202,13 +216,13 @@ public final class AuthoritativeGameWorld {
         executeCommand(new SpawnEnemyCommand(this, EnemyFactory.create(type, enemyId, position)));
     }
 
-    /** Undoes the most recent command run through the invoker. */
     public synchronized boolean undoLastCommand() {
+        logger.log("Undoing command");
         return commandInvoker.undo();
     }
 
-    /** Re-applies the most recently undone command. */
     public synchronized boolean redoLastCommand() {
+        logger.log("Redoing command");
         return commandInvoker.redo();
     }
 

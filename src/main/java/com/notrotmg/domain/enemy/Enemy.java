@@ -58,21 +58,21 @@ public abstract class Enemy extends Entity {
         this.attackCooldownSeconds = attackCooldownSeconds;
     }
 
-    public final String name() {
+    public String name() {
         return name;
     }
 
-    public final EnemyType type() {
+    public EnemyType type() {
         return type;
     }
 
-    public final List<Projectile> attack(Vector2 aimDirection) {
+    public List<Projectile> attack(Vector2 aimDirection) {
         AttackContext context = new AttackContext(id(), ProjectileSide.ENEMY, center(), aimDirection);
         return attackStrategy.attack(context, projectileSpec, projectileBuilderFactory);
     }
 
     /** Advances pursuit and fires at a target when it is in range and the cooldown is ready. */
-    public final List<Projectile> update(Position targetCenter, double deltaSeconds, WorldBounds bounds) {
+    public List<Projectile> update(Position targetCenter, double deltaSeconds, WorldBounds bounds) {
         Objects.requireNonNull(targetCenter);
         Objects.requireNonNull(bounds);
         if (deltaSeconds < 0) {
@@ -106,28 +106,32 @@ public abstract class Enemy extends Entity {
         return new Vector2(targetCenter.x() - origin.x(), targetCenter.y() - origin.y());
     }
 
-    public final ProjectileSpec projectileSpec() {
+    public ProjectileSpec projectileSpec() {
         return projectileSpec;
     }
 
-    public final AttackStrategy attackStrategy() {
+    public AttackStrategy attackStrategy() {
         return attackStrategy;
     }
 
-    public final Supplier<ProjectileBuilder> projectileBuilderFactory() {
+    public Supplier<ProjectileBuilder> projectileBuilderFactory() {
         return projectileBuilderFactory;
     }
 
-    public final double stopDistance() {
+    public double stopDistance() {
         return stopDistance;
     }
 
-    public final double attackRange() {
+    public double attackRange() {
         return attackRange;
     }
 
-    public final double attackCooldownSeconds() {
+    public double attackCooldownSeconds() {
         return attackCooldownSeconds;
+    }
+
+    public List<RegularEnemyAccessory> accessories() {
+        return List.of();
     }
 
 }

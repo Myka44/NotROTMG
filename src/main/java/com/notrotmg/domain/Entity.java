@@ -3,7 +3,7 @@ package com.notrotmg.domain;
 import java.util.Objects;
 
 public abstract class Entity {
-    private final String id;
+    private String id;
     private final double size;
     private final EntityStats stats;
     private Position position;
@@ -20,39 +20,47 @@ public abstract class Entity {
         this.currentHealth = stats.maxHealth();
     }
 
-    public final String id() {
+    public String id() {
         return id;
     }
 
-    public final Position position() {
+    public void setId(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
+
+    public Position position() {
         return position;
     }
 
-    protected final void position(Position position) {
+    protected void position(Position position) {
         this.position = Objects.requireNonNull(position);
     }
 
-    public final double size() {
+    public void setPosition(Position position) {
+        this.position = Objects.requireNonNull(position);
+    }
+
+    public double size() {
         return size;
     }
 
-    public final Position center() {
+    public Position center() {
         return new Position(position.x() + size / 2, position.y() + size / 2);
     }
 
-    public final EntityStats stats() {
+    public EntityStats stats() {
         return stats;
     }
 
-    public final int currentHealth() {
+    public int currentHealth() {
         return currentHealth;
     }
 
-    public final boolean isAlive() {
+    public boolean isAlive() {
         return currentHealth > 0;
     }
 
-    public final void takeDamage(double damage) {
+    public void takeDamage(double damage) {
         if (!Double.isFinite(damage) || damage < 0) {
             throw new IllegalArgumentException("Damage must be finite and non-negative");
         }
