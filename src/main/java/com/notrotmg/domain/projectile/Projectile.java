@@ -10,13 +10,14 @@ public final class Projectile {
     private final String ownerId;
     private final ProjectileSide side;
     private final String spriteId;
-    private final Vector2 trajectory;
+    private Vector2 trajectory;
     private final double speed;
     private final double length;
     private final double damage;
     private final double lifetimeSeconds;
     private Position position;
     private double remainingLifetimeSeconds;
+    private double turnRateRadiansPerSecond;
 
     Projectile(
             String id,
@@ -61,11 +62,21 @@ public final class Projectile {
         this.remainingLifetimeSeconds = lifetimeSeconds;
     }
 
+    void setTurnRate(double radiansPerSecond) {
+        if (!Double.isFinite(radiansPerSecond)) {
+            throw new IllegalArgumentException("Projectile turn rate must be finite");
+        }
+        turnRateRadiansPerSecond = radiansPerSecond;
+    }
+
     public void update(double deltaSeconds) {
         if (deltaSeconds < 0) {
             throw new IllegalArgumentException("Delta time cannot be negative");
         }
         position = position.translated(trajectory, speed * deltaSeconds);
+        if (turnRateRadiansPerSecond != 0) {
+            trajectory = trajectory.rotated(turnRateRadiansPerSecond * deltaSeconds).normalized();
+        }
         remainingLifetimeSeconds = Math.max(0, remainingLifetimeSeconds - deltaSeconds);
     }
 

@@ -8,12 +8,23 @@ import com.notrotmg.domain.enemy.decorators.RegularEnemySpeedDecorator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.UnaryOperator;
 
-/** Creates enemies and randomly applies two regular-enemy decorators. */
+/** Copies configured enemy templates and randomly decorates regular enemies. */
 public final class EnemyFactory {
+    private static final Position TEMPLATE_POSITION = new Position(0, 0);
+    private static final RegularEnemy REGULAR_TEMPLATE =
+            new RegularEnemy("regular-template", TEMPLATE_POSITION);
+    private static final BossEnemy BOSS_TEMPLATE =
+            new BossEnemy("boss-template", TEMPLATE_POSITION);
+    private static final Map<EnemyType, EnemyPrototype> PROTOTYPES = Map.of(
+            EnemyType.REGULAR, REGULAR_TEMPLATE,
+            EnemyType.BOSS, BOSS_TEMPLATE
+    );
+
     private EnemyFactory() {
     }
 
@@ -21,9 +32,16 @@ public final class EnemyFactory {
         Objects.requireNonNull(type);
         Objects.requireNonNull(position);
 
-        return switch (type) {
-            case REGULAR -> decorateRegularEnemy(new RegularEnemy(id, position));
-            case BOSS -> new BossEnemy(id, position);
+        Enemy copy = PROTOTYPES.get(type).copy(id, position);
+        return type == EnemyType.REGULAR
+                ? decorateRegularEnemy((RegularEnemy) copy)
+                : copy;
+    }
+
+    public static double sizeOf(EnemyType type) {
+        return switch (Objects.requireNonNull(type)) {
+            case REGULAR -> REGULAR_TEMPLATE.size();
+            case BOSS -> BOSS_TEMPLATE.size();
         };
     }
 

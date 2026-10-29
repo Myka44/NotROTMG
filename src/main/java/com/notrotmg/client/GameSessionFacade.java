@@ -1,6 +1,7 @@
 package com.notrotmg.client;
 
 import com.notrotmg.common.json.JacksonJsonCodec;
+import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.item.EquipmentSlot;
@@ -8,6 +9,7 @@ import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
 import com.notrotmg.protocol.clienttoserver.DropItemCommand;
 import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
+import com.notrotmg.protocol.clienttoserver.JoinGameCommand;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.clienttoserver.SpawnEnemyRequest;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
@@ -16,10 +18,11 @@ import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import com.notrotmg.protocol.servertoclient.Snapshot;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.Scene;
-import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.net.URI;
@@ -29,8 +32,8 @@ import java.util.Objects;
 /**
  * Facade over the client-side subsystems.
  *
- * <p>{@link #start(Scene, Stage, GameClientListener, GameControls)} is the single high-level
- * operation: it renders the first frame, attaches input, routes server messages
+ * <p>{@link #start(Scene, Stage, GameClientListener, GameControls, CharacterClass)} is the single high-level
+ * operation: it renders the first frame, starts controls, routes server messages
  * and opens the connection by calling the smaller facade operations in order.
  * Clients no longer wire those steps themselves.</p>
  *
@@ -41,6 +44,7 @@ import java.util.Objects;
  */
 public final class GameSessionFacade {
     private final Canvas canvas;
+    private final SpriteCatalog spriteCatalog;
     private final CanvasGameRenderer renderer;
     private final InventoryPane inventoryPane;
     private final ClientMessageHandler messageHandler;
@@ -55,7 +59,7 @@ public final class GameSessionFacade {
 
     public GameSessionFacade(Canvas canvas, URI serverUri) {
         this.canvas = Objects.requireNonNull(canvas);
-        SpriteCatalog spriteCatalog = new SpriteCatalog();
+        this.spriteCatalog = new SpriteCatalog();
         this.renderer = new CanvasGameRenderer(canvas, spriteCatalog);
         this.inventoryPane = new InventoryPane(
                 spriteCatalog,
@@ -75,19 +79,25 @@ public final class GameSessionFacade {
      * it orchestrates the smaller facade operations instead of making the client
      * call each subsystem itself.
      */
-    public void start(Scene scene, Stage stage, GameClientListener statusListener, GameControls controls) {
+    public void start(Scene scene, Stage stage, GameClientListener statusListener,
+                      GameControls controls, CharacterClass characterClass) {
         if (controlsTimer != null) {
             throw new IllegalStateException("Controls are already started");
         }
         Objects.requireNonNull(scene);
         Objects.requireNonNull(stage);
         Objects.requireNonNull(statusListener);
+        Objects.requireNonNull(characterClass);
         this.controls = Objects.requireNonNull(controls);
 
         renderInitialFrame();
         startControls(stage);
-        routeServerMessages(statusListener);
+        routeServerMessages(statusListener, characterClass);
         connect();
+    }
+
+    public Image classSprite(CharacterClass characterClass) {
+        return spriteCatalog.playerSprite(characterClass);
     }
 
     /** The inventory/equipment view, already wired to this session's transport. */
@@ -185,10 +195,11 @@ public final class GameSessionFacade {
         controlsTimer.start();
     }
 
-    private void routeServerMessages(GameClientListener statusListener) {
+    private void routeServerMessages(GameClientListener statusListener, CharacterClass characterClass) {
         routingListener = new GameClientListener() {
             @Override
             public void onConnected() {
+                send(new JoinGameCommand(characterClass));
                 Platform.runLater(() -> controls.stop());
                 statusListener.onConnected();
             }
