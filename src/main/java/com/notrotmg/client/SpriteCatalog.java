@@ -46,18 +46,18 @@ public final class SpriteCatalog {
         enemyAccessorySprites.put(RegularEnemyAccessory.SWORD, cropCell(atlas, pixels, 8, 87));
         enemyAccessorySprites.put(RegularEnemyAccessory.BOOTS, cropCell(atlas, pixels, 57, 83));
 
-        /* 
-        itemSprites.put(ItemType.SWORD, crop(atlas, pixels, 0, 1));
-        itemSprites.put(ItemType.STAFF, crop(atlas, pixels, 1, 1));
-        itemSprites.put(ItemType.BOW, crop(atlas, pixels, 2, 1));
-        itemSprites.put(ItemType.POTION, crop(atlas, pixels, 3, 1));
-        itemSprites.put(ItemType.ROBE, crop(atlas, pixels, 0, 2));
-        itemSprites.put(ItemType.LEATHER_ARMOR, crop(atlas, pixels, 1, 2));
-        itemSprites.put(ItemType.HEAVY_ARMOR, crop(atlas, pixels, 2, 2));
-        itemSprites.put(ItemType.HELMET, crop(atlas, pixels, 3, 2));
-        itemSprites.put(ItemType.RING, crop(atlas, pixels, 0, 3));
-        itemSprites.put(ItemType.SPELL, crop(atlas, pixels, 1, 3));
-        */
+         
+        itemSprites.put(ItemType.SWORD, crop(atlas, pixels, 8, 87));
+        itemSprites.put(ItemType.STAFF, crop(atlas, pixels, 1, 90));
+        itemSprites.put(ItemType.BOW, crop(atlas, pixels, 32, 71));
+        //itemSprites.put(ItemType.POTION, crop(atlas, pixels, 3, 1));
+        itemSprites.put(ItemType.ROBE, crop(atlas, pixels, 0, 83));
+        itemSprites.put(ItemType.LEATHER_ARMOR, crop(atlas, pixels, 12, 82));
+        itemSprites.put(ItemType.HEAVY_ARMOR, crop(atlas, pixels, 21, 82));
+        itemSprites.put(ItemType.HELMET, crop(atlas, pixels, 23, 93));
+        itemSprites.put(ItemType.RING, crop(atlas, pixels, 61, 92));
+        itemSprites.put(ItemType.SPELL, crop(atlas, pixels, 0, 39));
+        
     }
 
     public Image itemSprite(ItemType itemType) {

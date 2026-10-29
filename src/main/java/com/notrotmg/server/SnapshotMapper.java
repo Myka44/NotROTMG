@@ -3,8 +3,6 @@ package com.notrotmg.server;
 import com.notrotmg.domain.GameRules;
 import com.notrotmg.domain.Player;
 import com.notrotmg.domain.enemy.Enemy;
-import com.notrotmg.domain.enemy.RegularEnemy;
-import com.notrotmg.domain.enemy.RegularEnemyAccessory;
 import com.notrotmg.domain.item.Equipment;
 import com.notrotmg.domain.item.EquipmentSlot;
 import com.notrotmg.domain.item.Inventory;
@@ -90,9 +88,7 @@ public final class SnapshotMapper {
                 (int) Math.round(enemy.size()),
                 enemy.currentHealth(),
                 enemy.stats().maxHealth(),
-                enemy instanceof RegularEnemy regularEnemy
-                        ? regularEnemy.accessories()
-                        : List.<RegularEnemyAccessory>of()
+                enemy.accessories()
         );
     }
 

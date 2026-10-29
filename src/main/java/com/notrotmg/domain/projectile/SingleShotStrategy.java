@@ -6,6 +6,11 @@ import java.util.function.Supplier;
 /** Fires one projectile in the requested aim direction. */
 public final class SingleShotStrategy implements AttackStrategy {
     @Override
+    public SingleShotStrategy copy() {
+        return new SingleShotStrategy();
+    }
+
+    @Override
     public List<Projectile> attack(
             AttackContext context,
             ProjectileSpec spec,

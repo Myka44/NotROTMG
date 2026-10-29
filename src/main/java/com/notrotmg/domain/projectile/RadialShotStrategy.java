@@ -16,6 +16,11 @@ public final class RadialShotStrategy implements AttackStrategy {
     }
 
     @Override
+    public RadialShotStrategy copy() {
+        return new RadialShotStrategy(projectileCount);
+    }
+
+    @Override
     public List<Projectile> attack(
             AttackContext context,
             ProjectileSpec spec,

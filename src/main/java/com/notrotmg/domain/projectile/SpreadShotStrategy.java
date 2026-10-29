@@ -21,6 +21,11 @@ public final class SpreadShotStrategy implements AttackStrategy {
     }
 
     @Override
+    public SpreadShotStrategy copy() {
+        return new SpreadShotStrategy(projectileCount, angleStepDegrees);
+    }
+
+    @Override
     public List<Projectile> attack(
             AttackContext context,
             ProjectileSpec spec,

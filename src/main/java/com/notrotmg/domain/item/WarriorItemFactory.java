@@ -23,8 +23,8 @@ public final class WarriorItemFactory implements CharacterItemFactory {
     }
 
     @Override
-    public Equipment createAbility() {
-        return new Armor("Iron Helmet", ItemType.HELMET, EquipmentSlot.ABILITY, 6);
+    public Spell createAbility() {
+        return new Spell("Piercing Shot", 16, 12);
     }
 
     @Override

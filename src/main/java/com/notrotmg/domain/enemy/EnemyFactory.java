@@ -1,3 +1,4 @@
+
 package com.notrotmg.domain.enemy;
 
 import com.notrotmg.domain.Position;
@@ -14,6 +15,13 @@ import java.util.function.UnaryOperator;
 
 /** Creates enemies and randomly applies two regular-enemy decorators. */
 public final class EnemyFactory {
+    private static final List<Enemy> PROTOTYPES = List.of(
+        new RegularEnemy("regular-prototype", new Position(0, 0)),
+        new BossEnemy("boss-prototype", new Position(0, 0))
+    );
+
+    private static int enemyNum = 1;
+
     private EnemyFactory() {
     }
 
@@ -22,22 +30,42 @@ public final class EnemyFactory {
         Objects.requireNonNull(position);
 
         return switch (type) {
-            case REGULAR -> decorateRegularEnemy(new RegularEnemy(id, position));
-            case BOSS -> new BossEnemy(id, position);
+            case REGULAR -> {
+                enemyNum++;
+                RegularEnemy enemy =
+                    ((RegularEnemy) PROTOTYPES.get(0)).copy();
+
+                enemy.setId(id + enemyNum);
+                enemy.setPosition(position);
+
+                yield decorateRegularEnemy(enemy);
+            }
+            case BOSS -> {
+                BossEnemy enemy =
+                    ((BossEnemy) PROTOTYPES.get(1)).copy();
+
+                enemy.setId(id);
+                enemy.setPosition(position);
+
+                yield enemy;
+            }
         };
     }
 
-    private static RegularEnemy decorateRegularEnemy(RegularEnemy enemy) {
-        List<UnaryOperator<RegularEnemy>> decorators = new ArrayList<>(List.of(
-                regularEnemy -> new RegularEnemyHealthDecorator(regularEnemy).decorate(),
-                regularEnemy -> new RegularEnemySpreadShotDecorator(regularEnemy).decorate(),
-                regularEnemy -> new RegularEnemySpeedDecorator(regularEnemy).decorate()
+    private static Enemy decorateRegularEnemy(RegularEnemy enemy) {
+        List<UnaryOperator<Enemy>> decorators = new ArrayList<>(List.of(
+            RegularEnemyHealthDecorator::new,
+            RegularEnemySpreadShotDecorator::new,
+            RegularEnemySpeedDecorator::new
         ));
+
         Collections.shuffle(decorators, ThreadLocalRandom.current());
 
+        Enemy decoratedEnemy = enemy;
         for (int index = 0; index < 2; index++) {
-            enemy = decorators.get(index).apply(enemy);
+            decoratedEnemy = decorators.get(index).apply(decoratedEnemy);
         }
-        return enemy;
+
+        return decoratedEnemy;
     }
 }

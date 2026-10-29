@@ -13,6 +13,7 @@ import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
 import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.stage.Stage;
@@ -144,10 +145,12 @@ public final class GameSessionFacade {
 
             @Override
             public void onMessage(ServerMessage message) {
-                messageHandler.handle(message);
-                if (message instanceof GameSnapshot) {
-                    inputController.refreshAttackInput();
-                }
+                Platform.runLater(() -> {
+                    messageHandler.handle(message);
+                    if (message instanceof GameSnapshot) {
+                        inputController.refreshAttackInput();
+                    }
+                });
             }
 
             @Override
