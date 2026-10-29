@@ -1,6 +1,7 @@
 package com.notrotmg.domain.enemy.decorators;
 
 import com.notrotmg.domain.EntityStats;
+import com.notrotmg.domain.Position;
 import com.notrotmg.domain.enemy.RegularEnemyAccessory;
 import com.notrotmg.domain.enemy.Enemy;
 
@@ -15,6 +16,11 @@ public final class RegularEnemyHealthDecorator extends RegularEnemyDecorator {
     public RegularEnemyHealthDecorator(Enemy wrapped) {
         super(wrapped);
         currentHealth = wrapped.currentHealth() + EXTRA_HEALTH;
+    }
+
+    @Override
+    public RegularEnemyHealthDecorator copy(String id, Position position) {
+        return new RegularEnemyHealthDecorator(wrapped.copy(id, position));
     }
 
     @Override

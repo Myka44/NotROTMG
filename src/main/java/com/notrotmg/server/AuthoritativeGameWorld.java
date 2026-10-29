@@ -58,10 +58,9 @@ public final class AuthoritativeGameWorld {
     private final List<CombatEvent> combatEvents = new ArrayList<>();
     private final SnapshotMapper snapshotMapper;
     private final CommandInvoker commandInvoker = new CommandInvoker();
+    private final EnemySpawner enemySpawner = new EnemySpawner();
     private final GameLogger logger = GameLogger.getInstance();
     private long nextDebugSpawnId = 1;
-    private int enemySpawnInterval = 5;
-    private double currentEnemySpawnInterval = 0;
 
     public AuthoritativeGameWorld() {
         this(new SnapshotMapper());
@@ -79,7 +78,8 @@ public final class AuthoritativeGameWorld {
         ));
     }
 
-    public synchronized GameSnapshot addPlayer(String playerId) {
+    public synchronized GameSnapshot addPlayer(String playerId, CharacterClass characterClass) {
+        Objects.requireNonNull(characterClass);
         if (!players.containsKey(playerId)) {
             int spawnSlot = firstAvailableSpawnSlot();
             int[] spawn = SPAWN_POSITIONS[spawnSlot];
@@ -87,7 +87,7 @@ public final class AuthoritativeGameWorld {
                     playerId,
                     spawnSlot,
                     new Position(spawn[0], spawn[1]),
-                    _randomClass()
+                    characterClass
             );
             addStartingItems(player);
             players.put(playerId, player);
@@ -178,14 +178,8 @@ public final class AuthoritativeGameWorld {
         }
         enemies.values().removeIf(enemy -> !enemy.isAlive());
 
-        currentEnemySpawnInterval += GameRules.FIXED_DELTA_SECONDS;
-        if(currentEnemySpawnInterval >= enemySpawnInterval) {
-            currentEnemySpawnInterval = 0;
-            commandInvoker.execute(new SpawnEnemyCommand(
-                this,
-                EnemyFactory.create(EnemyType.REGULAR, "slime-2", new Position(220, 170))
-            ));
-        }
+        enemySpawner.tick(GameRules.FIXED_DELTA_SECONDS, players.values(), enemies.values(), bounds)
+                .ifPresent(this::spawn);
 
         return snapshot();
     }

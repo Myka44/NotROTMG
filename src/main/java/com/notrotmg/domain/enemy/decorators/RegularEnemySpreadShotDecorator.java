@@ -1,5 +1,6 @@
 package com.notrotmg.domain.enemy.decorators;
 
+import com.notrotmg.domain.Position;
 import com.notrotmg.domain.enemy.Enemy;
 import com.notrotmg.domain.enemy.RegularEnemyAccessory;
 import com.notrotmg.domain.projectile.SpreadShotStrategy;
@@ -13,6 +14,11 @@ public final class RegularEnemySpreadShotDecorator extends RegularEnemyDecorator
 
     public RegularEnemySpreadShotDecorator(Enemy wrapped) {
         super(wrapped);
+    }
+
+    @Override
+    public RegularEnemySpreadShotDecorator copy(String id, Position position) {
+        return new RegularEnemySpreadShotDecorator(wrapped.copy(id, position));
     }
 
     @Override

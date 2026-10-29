@@ -1,5 +1,6 @@
 package com.notrotmg.server;
 
+import com.notrotmg.domain.CharacterClass;
 import com.notrotmg.domain.Position;
 import com.notrotmg.domain.enemy.BossEnemy;
 import com.notrotmg.domain.enemy.RegularEnemy;
@@ -18,7 +19,7 @@ class CombatEventsTest {
     @Test
     void emitsOneShotEventForEightBossProjectilesAndDrainsItOnce() {
         AuthoritativeGameWorld world = emptyWorld();
-        world.addPlayer("player-1");
+        world.addPlayer("player-1", CharacterClass.WARRIOR);
         world.spawn(new BossEnemy("boss", new Position(220, 64)));
 
         GameSnapshot snapshot = world.tick();
@@ -34,7 +35,7 @@ class CombatEventsTest {
     @Test
     void emitsAHitEvenWhenTheKilledEnemyIsAlreadyAbsentFromTheSnapshot() {
         AuthoritativeGameWorld world = emptyWorld();
-        world.addPlayer("player-1");
+        world.addPlayer("player-1", CharacterClass.WARRIOR);
         RegularEnemy enemy = new RegularEnemy("target", new Position(110, 64));
         enemy.takeDamage(50);
         world.spawn(enemy);
@@ -54,7 +55,7 @@ class CombatEventsTest {
     @Test
     void distinguishesPlayerDamageFromEnemyDamage() {
         AuthoritativeGameWorld world = emptyWorld();
-        world.addPlayer("player-1");
+        world.addPlayer("player-1", CharacterClass.WARRIOR);
         world.spawn(new RegularEnemy("attacker", new Position(110, 64)));
         List<CombatEvent> events = new ArrayList<>();
 

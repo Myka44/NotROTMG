@@ -235,4 +235,21 @@ public final class RegularEnemy extends Enemy implements IPrototype<RegularEnemy
         this.accessories = new ArrayList<>(accessories);;
     }
 
+    @Override
+    public RegularEnemy copy(String id, Position position) {
+        return new RegularEnemy(
+                id,
+                position,
+                name(),
+                size(),
+                stats(),
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds(),
+                accessories
+        );
+    }
 }

@@ -15,6 +15,27 @@
     -fx-text-fill: #bdb4a5;
 }
 
+.class-menu {
+    -fx-background-color: #171615;
+}
+
+.class-choice {
+    -fx-background-color: #332f2b;
+    -fx-border-color: #6b6258;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-cursor: hand;
+}
+
+.class-choice:hover {
+    -fx-border-color: #f2c14e;
+}
+
+.class-name {
+    -fx-font-weight: bold;
+    -fx-text-fill: #eee4cf;
+}
+
 .inventory-pane {
     -fx-padding: 12;
     -fx-background-color: #211f1d;

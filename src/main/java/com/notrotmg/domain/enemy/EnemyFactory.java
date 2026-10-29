@@ -15,12 +15,10 @@ import java.util.function.UnaryOperator;
 
 /** Creates enemies and randomly applies two regular-enemy decorators. */
 public final class EnemyFactory {
-    private static final List<Enemy> PROTOTYPES = List.of(
-        new RegularEnemy("regular-prototype", new Position(0, 0)),
-        new BossEnemy("boss-prototype", new Position(0, 0))
-    );
-
-    private static int enemyNum = 1;
+    private static final RegularEnemy REGULAR_PROTOTYPE =
+            new RegularEnemy("regular-prototype", new Position(0, 0));
+    private static final BossEnemy BOSS_PROTOTYPE =
+            new BossEnemy("boss-prototype", new Position(0, 0));
 
     private EnemyFactory() {
     }
@@ -30,25 +28,15 @@ public final class EnemyFactory {
         Objects.requireNonNull(position);
 
         return switch (type) {
-            case REGULAR -> {
-                enemyNum++;
-                RegularEnemy enemy =
-                    ((RegularEnemy) PROTOTYPES.get(0)).copy();
+            case REGULAR -> decorateRegularEnemy(REGULAR_PROTOTYPE.copy(id, position));
+            case BOSS -> BOSS_PROTOTYPE.copy(id, position);
+        };
+    }
 
-                enemy.setId(id + enemyNum);
-                enemy.setPosition(position);
-
-                yield decorateRegularEnemy(enemy);
-            }
-            case BOSS -> {
-                BossEnemy enemy =
-                    ((BossEnemy) PROTOTYPES.get(1)).copy();
-
-                enemy.setId(id);
-                enemy.setPosition(position);
-
-                yield enemy;
-            }
+    public static double sizeOf(EnemyType type) {
+        return switch (Objects.requireNonNull(type)) {
+            case REGULAR -> REGULAR_PROTOTYPE.size();
+            case BOSS -> BOSS_PROTOTYPE.size();
         };
     }
 
