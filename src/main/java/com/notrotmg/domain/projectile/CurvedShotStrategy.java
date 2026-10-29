@@ -8,6 +8,11 @@ public final class CurvedShotStrategy implements AttackStrategy {
     private static final double TURN_RATE_RADIANS_PER_SECOND = Math.toRadians(55);
 
     @Override
+    public CurvedShotStrategy copy() {
+        return new CurvedShotStrategy();
+    }
+
+    @Override
     public List<Projectile> attack(
             AttackContext context,
             ProjectileSpec spec,

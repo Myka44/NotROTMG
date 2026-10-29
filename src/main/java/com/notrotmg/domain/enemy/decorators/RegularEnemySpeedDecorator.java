@@ -1,6 +1,7 @@
 package com.notrotmg.domain.enemy.decorators;
 
 import com.notrotmg.domain.EntityStats;
+import com.notrotmg.domain.Position;
 import com.notrotmg.domain.enemy.Enemy;
 import com.notrotmg.domain.enemy.RegularEnemyAccessory;
 
@@ -12,6 +13,11 @@ public final class RegularEnemySpeedDecorator extends RegularEnemyDecorator {
 
     public RegularEnemySpeedDecorator(Enemy wrapped) {
         super(wrapped);
+    }
+
+    @Override
+    public RegularEnemySpeedDecorator copy(String id, Position position) {
+        return new RegularEnemySpeedDecorator(wrapped.copy(id, position));
     }
 
     @Override

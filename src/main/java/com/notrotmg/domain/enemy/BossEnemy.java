@@ -46,9 +46,14 @@ public final class BossEnemy extends Enemy implements IPrototype<BossEnemy> {
         );
     }
 
-        @Override
-        public BossEnemy copy() {
-                return new BossEnemy(id(), position());
-        }
+    @Override
+    public BossEnemy copy() {
+        return copy(id(), position());
+    }
+
+    @Override
+    public BossEnemy copy(String id, Position position) {
+        return new BossEnemy(id, position);
+    }
 
 }
