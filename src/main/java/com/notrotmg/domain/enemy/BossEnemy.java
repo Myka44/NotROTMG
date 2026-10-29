@@ -10,7 +10,7 @@ import com.notrotmg.domain.projectile.RadialShotStrategy;
 
 import java.util.function.Supplier;
 
-public final class BossEnemy extends Enemy {
+public final class BossEnemy extends Enemy implements IPrototype<BossEnemy> {
     private static final double SIZE = 64;
     private static final EntityStats STATS = EntityStats.builder()
             .maxHealth(500)
@@ -30,10 +30,11 @@ public final class BossEnemy extends Enemy {
     private static final double ATTACK_COOLDOWN_SECONDS = 2;
 
     public BossEnemy(String id, Position position) {
-        this(
+        super(
                 id,
-                position,
                 "Ancient Guardian",
+                EnemyType.BOSS,
+                position,
                 SIZE,
                 STATS,
                 PROJECTILE,
@@ -45,49 +46,9 @@ public final class BossEnemy extends Enemy {
         );
     }
 
-    private BossEnemy(
-            String id,
-            Position position,
-            String name,
-            double size,
-            EntityStats stats,
-            ProjectileSpec projectileSpec,
-            AttackStrategy attackStrategy,
-            Supplier<ProjectileBuilder> projectileBuilderFactory,
-            double stopDistance,
-            double attackRange,
-            double attackCooldownSeconds
-    ) {
-        super(
-                id,
-                name,
-                EnemyType.BOSS,
-                position,
-                size,
-                stats,
-                projectileSpec,
-                attackStrategy,
-                projectileBuilderFactory,
-                stopDistance,
-                attackRange,
-                attackCooldownSeconds
-        );
-    }
+        @Override
+        public BossEnemy copy() {
+                return new BossEnemy(id(), position());
+        }
 
-    @Override
-    public BossEnemy copy(String id, Position position) {
-        return new BossEnemy(
-                id,
-                position,
-                name(),
-                size(),
-                stats(),
-                projectileSpec(),
-                attackStrategy(),
-                projectileBuilderFactory(),
-                stopDistance(),
-                attackRange(),
-                attackCooldownSeconds()
-        );
-    }
 }

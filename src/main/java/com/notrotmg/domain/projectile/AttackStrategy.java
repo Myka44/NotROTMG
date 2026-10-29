@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 
 /** Strategy for arranging the projectiles created by one attack. */
 public interface AttackStrategy {
+    AttackStrategy copy();
+
     List<Projectile> attack(
             AttackContext context,
             ProjectileSpec spec,

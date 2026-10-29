@@ -23,7 +23,7 @@ public final class ArcherItemFactory implements CharacterItemFactory {
     }
 
     @Override
-    public Equipment createAbility() {
+    public Spell createAbility() {
         return new Spell("Piercing Shot", 16, 12);
     }
 

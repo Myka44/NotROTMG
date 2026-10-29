@@ -116,11 +116,15 @@ public final class GameClient implements AutoCloseable {
             if (last) {
                 String json = partialMessage.toString();
                 partialMessage.setLength(0);
+                ServerMessage message;
                 try {
-                    notifyMessage(jsonCodec.decode(json, ServerMessage.class));
+                    message = jsonCodec.decode(json, ServerMessage.class);
                 } catch (RuntimeException error) {
                     notifyError("Invalid server message: " + messageOf(error));
+                    socket.request(1);
+                    return CompletableFuture.completedFuture(null);
                 }
+                notifyMessage(message);
             }
             socket.request(1);
             return CompletableFuture.completedFuture(null);

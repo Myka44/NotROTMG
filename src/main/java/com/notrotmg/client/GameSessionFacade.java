@@ -17,6 +17,7 @@ import com.notrotmg.protocol.clienttoserver.UndoCommand;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.ServerMessage;
 import com.notrotmg.protocol.servertoclient.Snapshot;
+import javafx.application.Platform;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
