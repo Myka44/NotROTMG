@@ -1,5 +1,6 @@
 package com.notrotmg.client;
 
+import com.notrotmg.domain.Position;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.EnemySnapshot;
 import com.notrotmg.protocol.servertoclient.PlayerSnapshot;
@@ -21,10 +22,13 @@ public final class CanvasGameRenderer {
     private final SpriteCatalog spriteCatalog;
     private double cameraX;
     private double cameraY;
+    private Position playerScreenPosition;
+    private Position aimTarget;
 
     public CanvasGameRenderer(Canvas canvas, SpriteCatalog spriteCatalog) {
         this.canvas = Objects.requireNonNull(canvas);
         this.spriteCatalog = Objects.requireNonNull(spriteCatalog);
+        this.playerScreenPosition = new Position(canvas.getWidth() / 2, canvas.getHeight() / 2);
     }
 
     public void render(GameSnapshot snapshot) {
@@ -46,6 +50,7 @@ public final class CanvasGameRenderer {
             drawPlayer(graphics, player, (int) canvas.getHeight());
         }
         graphics.restore();
+        drawAimTarget(graphics);
     }
 
     public double worldX(double screenX) {
@@ -56,6 +61,14 @@ public final class CanvasGameRenderer {
         return screenY + cameraY;
     }
 
+    public Position playerScreenPosition() {
+        return playerScreenPosition;
+    }
+
+    public void aimTarget(Position target) {
+        aimTarget = target;
+    }
+
     private void updateCamera(GameSnapshot snapshot) {
         PlayerSnapshot followedPlayer = snapshot.players().stream()
                 .filter(player -> Objects.equals(player.id(), snapshot.followedPlayerId()))
@@ -64,6 +77,7 @@ public final class CanvasGameRenderer {
         if (followedPlayer == null) {
             cameraX = 0;
             cameraY = 0;
+            playerScreenPosition = new Position(canvas.getWidth() / 2, canvas.getHeight() / 2);
             return;
         }
 
@@ -71,6 +85,26 @@ public final class CanvasGameRenderer {
         double centerY = followedPlayer.y() + followedPlayer.size() / 2.0;
         cameraX = clampCamera(centerX - canvas.getWidth() / 2, snapshot.worldWidth(), canvas.getWidth());
         cameraY = clampCamera(centerY - canvas.getHeight() / 2, snapshot.worldHeight(), canvas.getHeight());
+        playerScreenPosition = new Position(centerX - cameraX, centerY - cameraY);
+    }
+
+    private void drawAimTarget(GraphicsContext graphics) {
+        if (aimTarget == null) {
+            return;
+        }
+        graphics.save();
+        graphics.beginPath();
+        graphics.rect(0, 0, canvas.getWidth(), canvas.getHeight());
+        graphics.clip();
+        graphics.setStroke(Color.BLACK);
+        graphics.setLineWidth(3);
+        graphics.strokeOval(aimTarget.x() - 5, aimTarget.y() - 5, 10, 10);
+        graphics.setStroke(Color.WHITE);
+        graphics.setLineWidth(1);
+        graphics.strokeOval(aimTarget.x() - 5, aimTarget.y() - 5, 10, 10);
+        graphics.strokeLine(aimTarget.x() - 8, aimTarget.y(), aimTarget.x() + 8, aimTarget.y());
+        graphics.strokeLine(aimTarget.x(), aimTarget.y() - 8, aimTarget.x(), aimTarget.y() + 8);
+        graphics.restore();
     }
 
     private static double clampCamera(double desiredOffset, double worldSize, double viewportSize) {

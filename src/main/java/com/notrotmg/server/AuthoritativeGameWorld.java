@@ -1,8 +1,10 @@
 package com.notrotmg.server;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import com.notrotmg.domain.projectile.Projectile;
 import com.notrotmg.domain.projectile.ProjectileSide;
 import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
+import com.notrotmg.protocol.servertoclient.CombatEvent;
 import com.notrotmg.protocol.servertoclient.GameSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
 
@@ -49,6 +52,7 @@ public final class AuthoritativeGameWorld {
     private final Map<String, Player> players = new LinkedHashMap<>();
     private final Map<String, Enemy> enemies = new LinkedHashMap<>();
     private final Map<String, Projectile> projectiles = new LinkedHashMap<>();
+    private final List<CombatEvent> combatEvents = new ArrayList<>();
     private final SnapshotMapper snapshotMapper;
     private final CommandInvoker commandInvoker = new CommandInvoker();
     private long nextDebugSpawnId = 1;
@@ -126,15 +130,13 @@ public final class AuthoritativeGameWorld {
     }
 
     public synchronized GameSnapshot tick() {
+        combatEvents.clear();
         players.values().forEach(player -> player.move(GameRules.FIXED_DELTA_SECONDS, bounds));
-        players.values().stream()
-                .flatMap(player -> player.updateAttack(GameRules.FIXED_DELTA_SECONDS).stream())
-                .forEach(projectile -> projectiles.put(projectile.id(), projectile));
+        players.values().forEach(player -> addAttack(player.updateAttack(GameRules.FIXED_DELTA_SECONDS)));
         for (Enemy enemy : enemies.values()) {
             Player target = nearestLivingPlayer(enemy);
             if (target != null) {
-                enemy.update(target.center(), GameRules.FIXED_DELTA_SECONDS, bounds)
-                        .forEach(projectile -> projectiles.put(projectile.id(), projectile));
+                addAttack(enemy.update(target.center(), GameRules.FIXED_DELTA_SECONDS, bounds));
             }
         }
 
@@ -146,7 +148,14 @@ public final class AuthoritativeGameWorld {
 
             Entity target = firstHitTarget(projectile, previousPosition);
             if (target != null) {
+                int previousHealth = target.currentHealth();
                 target.takeDamage(projectile.damage());
+                if (target.currentHealth() < previousHealth) {
+                    CombatEvent.Kind kind = target instanceof Player
+                            ? CombatEvent.Kind.PLAYER_HIT
+                            : CombatEvent.Kind.ENEMY_HIT;
+                    combatEvents.add(new CombatEvent(kind, ""));
+                }
                 iterator.remove();
             } else if (projectile.isExpired() || isOutsideWorld(projectile)) {
                 iterator.remove();
@@ -205,6 +214,25 @@ public final class AuthoritativeGameWorld {
 
     public synchronized GameSnapshot snapshot() {
         return snapshotMapper.gameSnapshot(players.values(), enemies.values(), projectiles.values());
+    }
+
+    public synchronized List<CombatEvent> drainCombatEvents() {
+        List<CombatEvent> events = List.copyOf(combatEvents);
+        combatEvents.clear();
+        return events;
+    }
+
+    private void addAttack(List<Projectile> attack) {
+        if (attack.isEmpty()) {
+            return;
+        }
+        attack.forEach(projectile -> projectiles.put(projectile.id(), projectile));
+        // A spread or radial attack is one event, regardless of its projectile count.
+        Projectile first = attack.get(0);
+        CombatEvent.Kind kind = first.side() == ProjectileSide.PLAYER
+                ? CombatEvent.Kind.PLAYER_SHOT
+                : CombatEvent.Kind.ENEMY_SHOT;
+        combatEvents.add(new CombatEvent(kind, first.spriteId()));
     }
 
     private Player nearestLivingPlayer(Enemy enemy) {

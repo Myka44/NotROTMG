@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "messageType")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = GameSnapshot.class, name = "game-snapshot"),
-        @JsonSubTypes.Type(value = InventorySnapshot.class, name = "inventory-snapshot")
+        @JsonSubTypes.Type(value = InventorySnapshot.class, name = "inventory-snapshot"),
+        @JsonSubTypes.Type(value = CombatEvents.class, name = "combat-events")
 })
 public interface ServerMessage {
 }
