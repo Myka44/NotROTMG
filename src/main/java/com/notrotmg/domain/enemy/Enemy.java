@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public abstract class Enemy extends Entity {
+public abstract class Enemy extends Entity implements EnemyPrototype {
     private final String name;
     private final EnemyType type;
     private final ProjectileSpec projectileSpec;
@@ -130,4 +130,7 @@ public abstract class Enemy extends Entity {
         return attackCooldownSeconds;
     }
 
+    /** Copies this enemy's configuration with a fresh ID, position, health and cooldown. */
+    @Override
+    public abstract Enemy copy(String id, Position position);
 }

@@ -1,6 +1,7 @@
 package com.notrotmg.client;
 
 import com.notrotmg.domain.item.EquipmentSlot;
+import com.notrotmg.domain.item.Inventory;
 import com.notrotmg.protocol.servertoclient.InventorySlotSnapshot;
 import com.notrotmg.protocol.servertoclient.InventorySnapshot;
 import com.notrotmg.protocol.servertoclient.ItemSnapshot;
@@ -17,10 +18,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 /** Compact, game-style view for private inventory and equipped-item state. */
 public final class InventoryPane extends VBox {
@@ -84,7 +88,7 @@ public final class InventoryPane extends VBox {
     }
 
     private void renderEquipment() {
-        equipmentGrid.getChildren().clear();
+        List<Button> buttons = new ArrayList<>(EQUIPMENT_SLOTS.size());
         for (int index = 0; index < EQUIPMENT_SLOTS.size(); index++) {
             EquipmentSlot slot = EQUIPMENT_SLOTS.get(index);
             ItemSnapshot item = currentSnapshot.equippedItems().get(slot);
@@ -93,22 +97,26 @@ public final class InventoryPane extends VBox {
             if (item != null) {
                 button.setOnAction(event -> unequipHandler.accept(slot));
             }
-            equipmentGrid.add(button, index, 0);
+            GridPane.setConstraints(button, index, 0);
+            buttons.add(button);
         }
+        equipmentGrid.getChildren().setAll(buttons);
     }
 
     private void renderInventory() {
-        inventoryGrid.getChildren().clear();
+        List<Button> buttons = new ArrayList<>(currentSnapshot.inventorySlots().size());
         for (InventorySlotSnapshot slot : currentSnapshot.inventorySlots()) {
             Button button = itemButton(Integer.toString(slot.index() + 1), slot.item(),
                     slot.index() == selectedInventorySlot);
             button.setOnAction(event -> selectInventorySlot(slot.index()));
-            inventoryGrid.add(
+            GridPane.setConstraints(
                     button,
                     slot.index() % INVENTORY_COLUMNS,
                     slot.index() / INVENTORY_COLUMNS
             );
+            buttons.add(button);
         }
+        inventoryGrid.getChildren().setAll(buttons);
     }
 
     private Button itemButton(String slotText, ItemSnapshot item, boolean selected) {
@@ -152,7 +160,7 @@ public final class InventoryPane extends VBox {
             return emptyIcon;
         }
 
-        ImageView icon = new ImageView(spriteCatalog.itemSprite(item.itemType()));
+        ImageView icon = new ImageView(spriteCatalog.itemSprite(item.itemType(), item.name()));
         icon.setFitWidth(32);
         icon.setFitHeight(32);
         icon.setPreserveRatio(true);
@@ -196,10 +204,12 @@ public final class InventoryPane extends VBox {
     }
 
     private void showWaitingState() {
-        equipmentGrid.getChildren().clear();
-        inventoryGrid.getChildren().clear();
-        actions.setVisible(false);
-        actions.setManaged(false);
+        render(new InventorySnapshot(
+                IntStream.range(0, Inventory.DEFAULT_CAPACITY)
+                        .mapToObj(index -> new InventorySlotSnapshot(index, null))
+                        .toList(),
+                Map.of()
+        ));
     }
 
     private ItemSnapshot itemInSlot(int inventorySlot) {

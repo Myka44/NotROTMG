@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 /** Message sent by a client to request a server-side game action. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "commandType")
 @JsonSubTypes({
+        @JsonSubTypes.Type(value = JoinGameCommand.class, name = "join-game"),
         @JsonSubTypes.Type(value = PlayerInput.class, name = "player-input"),
         @JsonSubTypes.Type(value = AttackInput.class, name = "attack-input"),
         @JsonSubTypes.Type(value = EquipItemCommand.class, name = "equip-item"),

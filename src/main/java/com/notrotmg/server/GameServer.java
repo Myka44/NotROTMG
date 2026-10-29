@@ -9,6 +9,7 @@ import com.notrotmg.protocol.clienttoserver.AttackInput;
 import com.notrotmg.protocol.clienttoserver.ClientCommand;
 import com.notrotmg.protocol.clienttoserver.DropItemCommand;
 import com.notrotmg.protocol.clienttoserver.EquipItemCommand;
+import com.notrotmg.protocol.clienttoserver.JoinGameCommand;
 import com.notrotmg.protocol.clienttoserver.PlayerInput;
 import com.notrotmg.protocol.clienttoserver.SpawnEnemyRequest;
 import com.notrotmg.protocol.clienttoserver.UnequipItemCommand;
@@ -71,6 +72,10 @@ public final class GameServer implements AutoCloseable {
 
     private static GameCommandHandler createCommandHandler(AuthoritativeGameWorld world) {
         return new GameCommandHandler()
+                .register(JoinGameCommand.class, (playerId, command) -> {
+                    world.addPlayer(playerId, command.characterClass());
+                    return inventoryResponse(world, playerId);
+                })
                 .register(PlayerInput.class, (playerId, input) -> {
                     world.acceptInput(playerId, input);
                     return Optional.empty();
@@ -145,9 +150,6 @@ public final class GameServer implements AutoCloseable {
 
     private void onConnect(WsContext connection) {
         clients.register(connection).ifPresentOrElse(registration -> {
-            world.addPlayer(registration.playerId());
-            publishCurrentSnapshot(true);
-            sendInventorySnapshot(connection, registration.playerId());
             System.out.println(
                     registration.playerId() + " connected ("
                             + registration.connectedClients() + "/" + GameProtocol.MAX_PLAYERS + ")"
@@ -212,11 +214,6 @@ public final class GameServer implements AutoCloseable {
             }
         }
         lastPublishedSnapshot = snapshot;
-    }
-
-    private void sendInventorySnapshot(WsContext connection, String playerId) {
-        world.inventorySnapshot(playerId)
-                .ifPresent(snapshot -> sendMessage(connection, snapshot));
     }
 
     private void sendMessage(WsContext connection, ServerMessage message) {

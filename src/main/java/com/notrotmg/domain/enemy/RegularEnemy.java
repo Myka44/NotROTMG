@@ -140,4 +140,21 @@ public final class RegularEnemy extends Enemy {
         this.accessories = List.copyOf(accessories);
     }
 
+    @Override
+    public RegularEnemy copy(String id, Position position) {
+        return new RegularEnemy(
+                id,
+                position,
+                name(),
+                size(),
+                stats(),
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds(),
+                accessories
+        );
+    }
 }

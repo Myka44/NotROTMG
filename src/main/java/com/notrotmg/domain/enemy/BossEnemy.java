@@ -30,11 +30,10 @@ public final class BossEnemy extends Enemy {
     private static final double ATTACK_COOLDOWN_SECONDS = 2;
 
     public BossEnemy(String id, Position position) {
-        super(
+        this(
                 id,
-                "Ancient Guardian",
-                EnemyType.BOSS,
                 position,
+                "Ancient Guardian",
                 SIZE,
                 STATS,
                 PROJECTILE,
@@ -46,4 +45,49 @@ public final class BossEnemy extends Enemy {
         );
     }
 
+    private BossEnemy(
+            String id,
+            Position position,
+            String name,
+            double size,
+            EntityStats stats,
+            ProjectileSpec projectileSpec,
+            AttackStrategy attackStrategy,
+            Supplier<ProjectileBuilder> projectileBuilderFactory,
+            double stopDistance,
+            double attackRange,
+            double attackCooldownSeconds
+    ) {
+        super(
+                id,
+                name,
+                EnemyType.BOSS,
+                position,
+                size,
+                stats,
+                projectileSpec,
+                attackStrategy,
+                projectileBuilderFactory,
+                stopDistance,
+                attackRange,
+                attackCooldownSeconds
+        );
+    }
+
+    @Override
+    public BossEnemy copy(String id, Position position) {
+        return new BossEnemy(
+                id,
+                position,
+                name(),
+                size(),
+                stats(),
+                projectileSpec(),
+                attackStrategy(),
+                projectileBuilderFactory(),
+                stopDistance(),
+                attackRange(),
+                attackCooldownSeconds()
+        );
+    }
 }

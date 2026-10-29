@@ -13,11 +13,12 @@ import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Loads one sprite sheet and caches its individual character and item sprites. */
+/** Loads the sprite sheet and caches the character, enemy, and item sprites. */
 public final class SpriteCatalog {
     private static final String SPRITE_SHEET = "/sprites/ProjectUtumno_full.png";
     private static final int ATLAS_COLUMNS = 64;
@@ -25,9 +26,10 @@ public final class SpriteCatalog {
     private static final int VISIBLE_ALPHA_THRESHOLD = 16;
 
     private final Map<ItemType, Image> itemSprites = new EnumMap<>(ItemType.class);
+    private final Map<String, Image> namedItemSprites = new HashMap<>();
     private final Map<CharacterClass, Image> playerSprites = new EnumMap<>(CharacterClass.class);
     private final Map<EnemyType, Image> enemySprites = new EnumMap<>(EnemyType.class);
-        private final Map<RegularEnemyAccessory, Image> enemyAccessorySprites =
+    private final Map<RegularEnemyAccessory, Image> enemyAccessorySprites =
             new EnumMap<>(RegularEnemyAccessory.class);
 
 
@@ -46,18 +48,22 @@ public final class SpriteCatalog {
         enemyAccessorySprites.put(RegularEnemyAccessory.SWORD, cropCell(atlas, pixels, 8, 87));
         enemyAccessorySprites.put(RegularEnemyAccessory.BOOTS, cropCell(atlas, pixels, 57, 83));
 
-        /* 
-        itemSprites.put(ItemType.SWORD, crop(atlas, pixels, 0, 1));
-        itemSprites.put(ItemType.STAFF, crop(atlas, pixels, 1, 1));
-        itemSprites.put(ItemType.BOW, crop(atlas, pixels, 2, 1));
-        itemSprites.put(ItemType.POTION, crop(atlas, pixels, 3, 1));
-        itemSprites.put(ItemType.ROBE, crop(atlas, pixels, 0, 2));
-        itemSprites.put(ItemType.LEATHER_ARMOR, crop(atlas, pixels, 1, 2));
-        itemSprites.put(ItemType.HEAVY_ARMOR, crop(atlas, pixels, 2, 2));
-        itemSprites.put(ItemType.HELMET, crop(atlas, pixels, 3, 2));
-        itemSprites.put(ItemType.RING, crop(atlas, pixels, 0, 3));
-        itemSprites.put(ItemType.SPELL, crop(atlas, pixels, 1, 3));
-        */
+        itemSprites.put(ItemType.SWORD, cropCell(atlas, pixels, 4, 45));
+        itemSprites.put(ItemType.STAFF, cropCell(atlas, pixels, 5, 44));
+        itemSprites.put(ItemType.BOW, cropCell(atlas, pixels, 6, 48));
+        itemSprites.put(ItemType.ROBE, cropCell(atlas, pixels, 1, 34));
+        itemSprites.put(ItemType.LEATHER_ARMOR, cropCell(atlas, pixels, 24, 38));
+        itemSprites.put(ItemType.HEAVY_ARMOR, cropCell(atlas, pixels, 20, 38));
+        itemSprites.put(ItemType.HELMET, cropCell(atlas, pixels, 2, 37));
+        itemSprites.put(ItemType.RING, cropCell(atlas, pixels, 6, 43));
+        itemSprites.put(ItemType.SPELL, cropCell(atlas, pixels, 0, 39));
+        itemSprites.put(ItemType.POTION, cropCell(atlas, pixels, 0, 42));
+
+        namedItemSprites.put("Iron Ring", cropCell(atlas, pixels, 15, 43));
+        namedItemSprites.put("Arcane Ring", cropCell(atlas, pixels, 13, 43));
+        namedItemSprites.put("Hunter's Ring", cropCell(atlas, pixels, 18, 43));
+        namedItemSprites.put("Fireball", cropCell(atlas, pixels, 18, 31));
+        namedItemSprites.put("Piercing Shot", cropCell(atlas, pixels, 23, 30));
     }
 
     public Image itemSprite(ItemType itemType) {
@@ -66,6 +72,11 @@ public final class SpriteCatalog {
             throw new IllegalArgumentException("No sprite registered for item type: " + itemType);
         }
         return sprite;
+    }
+
+    public Image itemSprite(ItemType itemType, String itemName) {
+        Image sprite = namedItemSprites.get(Objects.requireNonNull(itemName));
+        return sprite != null ? sprite : itemSprite(itemType);
     }
 
     public Image playerSprite(CharacterClass characterClass) {
@@ -111,14 +122,14 @@ public final class SpriteCatalog {
             int row
     ) {
         return extractDominantSprite(cropCell(atlas, pixels, column, row));
-        }
+    }
 
-        private static Image cropCell(
+    private static Image cropCell(
             Image atlas,
             PixelReader pixels,
             int column,
             int row
-        ) {
+    ) {
         int x = boundary(column, (int) atlas.getWidth(), ATLAS_COLUMNS);
         int y = boundary(row, (int) atlas.getHeight(), ATLAS_ROWS);
         int nextX = boundary(column + 1, (int) atlas.getWidth(), ATLAS_COLUMNS);
